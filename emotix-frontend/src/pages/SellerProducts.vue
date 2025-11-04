@@ -9,24 +9,46 @@ import { useRouter } from 'vue-router'
 
 const auth = useAuth()
 const r = useRouter()
+
 const items = ref([])
+const categories = ref([])
 const loading = ref(true)
 const error = ref('')
+
 const openCreate = ref(false)
 const openEdit = ref(false)
 const editing = ref(null)
 
+/* ✅ pindahin import.meta ke sini */
+const STORAGE_BASE = import.meta.env?.VITE_STORAGE_BASE ?? 'http://localhost:8000/storage'
+const imgSrc = (path) => (path ? `${STORAGE_BASE}/${path}` : '')
+
 onMounted(async () => {
   if (!auth.token) return r.push('/login')
   if (auth.user?.role !== 'seller') return r.push('/buyer/orders')
-  await load()
+  await Promise.all([loadCategories(), load()])
 })
+
+async function loadCategories() {
+  try {
+    const { data } = await api.get('/categories')
+    categories.value = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : [])
+  } catch (e) {
+    console.error('Gagal memuat kategori:', e?.response?.data || e)
+    categories.value = [
+      { id: 1, name: 'Handphone' },
+      { id: 2, name: 'Laptop' },
+      { id: 3, name: 'Tablet' },
+    ]
+  }
+}
 
 async function load() {
   loading.value = true; error.value=''
   try {
     const { data } = await api.get('/products')
-    items.value = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : [])
+    const raw = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : [])
+    items.value = raw.sort((a,b) => (b.product_id ?? 0) - (a.product_id ?? 0))
   } catch (e) {
     error.value = e?.response?.data?.message || 'Gagal memuat produk'
   } finally {
@@ -36,14 +58,30 @@ async function load() {
 
 async function createProduct(payload) {
   try {
-    const form = new FormData()
-    form.append('product_name', payload.product_name ?? '')
-    form.append('price', payload.price ?? 0)
-    form.append('stock', payload.stock ?? 0)
-    form.append('description', payload.description ?? '')
-    if (payload.image) form.append('image', payload.image)
+    if (!payload.category_id) return alert('Kategori wajib dipilih')
+    if (!payload.product_name?.trim()) return alert('Nama produk wajib')
+    if (payload.price == null || Number(payload.price) < 0) return alert('Harga tidak valid')
+    if (payload.stock == null || Number(payload.stock) < 0) return alert('Stok tidak valid')
 
-    await api.post('/products', form, { headers: { 'Content-Type': 'multipart/form-data' } })
+    if (!payload.image) {
+      await api.post('/products', {
+        category_id: Number(payload.category_id),
+        product_name: payload.product_name,
+        price: Number(payload.price),
+        stock: Number(payload.stock),
+        description: payload.description ?? ''
+      })
+    } else {
+      const form = new FormData()
+      form.append('category_id', String(payload.category_id))
+      form.append('product_name', payload.product_name)
+      form.append('price', String(payload.price))
+      form.append('stock', String(payload.stock))
+      form.append('description', payload.description ?? '')
+      form.append('image', payload.image)
+      await api.post('/products', form, { headers: { 'Content-Type': 'multipart/form-data' } })
+    }
+
     openCreate.value = false
     await load()
   } catch (e) {
@@ -54,33 +92,27 @@ async function createProduct(payload) {
 function startEdit(row) {
   editing.value = {
     product_id: row.product_id,
+    category_id: row.category_id ?? '',
     product_name: row.product_name,
     price: row.price,
     stock: row.stock,
     description: row.description ?? '',
-    image: null, // supaya input file kosong
+    image: null,
   }
   openEdit.value = true
 }
 
-
 async function updateProduct(payload) {
   try {
     const form = new FormData()
-    form.append('product_name', payload.product_name ?? '')
-    form.append('price', payload.price ?? 0)
-    form.append('stock', payload.stock ?? 0)
-    form.append('description', payload.description ?? '')
-    if (payload.image) form.append('image', payload.image)
-
-    // Pilih salah satu:
-    // A) RESTfull murni (server support PUT multipart)
-    // await api.put(`/products/${editing.value.product_id}`, form, {
-    //   headers: { 'Content-Type': 'multipart/form-data' }
-    // })
-
-    // B) Kompatibel luas (method override)
     form.append('_method', 'PUT')
+    if (payload.category_id != null)   form.append('category_id', String(payload.category_id))
+    if (payload.product_name != null)  form.append('product_name', payload.product_name ?? '')
+    if (payload.price != null)         form.append('price', String(payload.price ?? 0))
+    if (payload.stock != null)         form.append('stock', String(payload.stock ?? 0))
+    if (payload.description != null)   form.append('description', payload.description ?? '')
+    if (payload.image)                 form.append('image', payload.image)
+
     await api.post(`/products/${editing.value.product_id}`, form, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
@@ -91,7 +123,6 @@ async function updateProduct(payload) {
     alert(e?.response?.data?.message || 'Gagal update produk')
   }
 }
-
 
 async function removeProduct(row) {
   if (!confirm(`Hapus produk "${row.product_name}"?`)) return
@@ -123,6 +154,7 @@ async function removeProduct(row) {
           <tr>
             <th class="p-3">ID</th>
             <th class="p-3">Nama</th>
+            <th class="p-3">Kategori</th>
             <th class="p-3">Harga</th>
             <th class="p-3">Stok</th>
             <th class="p-3">Gambar</th>
@@ -133,10 +165,11 @@ async function removeProduct(row) {
           <tr v-for="p in items" :key="p.product_id" class="border-t">
             <td class="p-3">{{ p.product_id }}</td>
             <td class="p-3">{{ p.product_name }}</td>
+            <td class="p-3">{{ p.category?.name || p.category_name || p.category_id }}</td>
             <td class="p-3">Rp {{ Number(p.price||0).toLocaleString('id-ID') }}</td>
             <td class="p-3">{{ p.stock }}</td>
             <td class="p-3">
-              <img v-if="p.image" :src="`http://localhost:8000/storage/${p.image}`" class="w-12 h-12 object-cover rounded" />
+              <img v-if="p.image" :src="imgSrc(p.image)" class="w-12 h-12 object-cover rounded" />
               <span v-else class="text-gray-400">-</span>
             </td>
             <td class="p-3 space-x-2">
@@ -152,31 +185,32 @@ async function removeProduct(row) {
 
     <!-- Modal: Produk Baru -->
     <Modal
-    :open="openCreate"
-    title="Produk Baru"
-    @close="openCreate=false"
-    :key="openCreate ? 'create-open' : 'create-closed'"
+      :open="openCreate"
+      title="Produk Baru"
+      @close="openCreate=false"
+      :key="openCreate ? 'create-open' : 'create-closed'"
     >
-    <ProductForm
-        :model-value="{ product_name:'', price:'', stock:'', description:'', image:null }"
+      <ProductForm
+        :model-value="{ category_id:'', product_name:'', price:'', stock:'', description:'', image:null }"
+        :categories="categories"
         @submit="createProduct"
         :key="openCreate ? 'create-form-open' : 'create-form-closed'"
-    />
+      />
     </Modal>
 
-
+    <!-- Modal: Edit Produk -->
     <Modal
-    :open="openEdit"
-    title="Edit Produk"
-    @close="openEdit=false"
-    :key="editing?.product_id || 'edit-modal'"
+      :open="openEdit"
+      title="Edit Produk"
+      @close="openEdit=false"
+      :key="editing?.product_id || 'edit-modal'"
     >
-    <ProductForm
+      <ProductForm
         :model-value="editing || {}"
+        :categories="categories"
         @submit="updateProduct"
         :key="editing?.product_id || 'edit'"
-    />
+      />
     </Modal>
-
   </Shell>
 </template>
