@@ -1,0 +1,40 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\Admin\UserController as AdminUser;
+
+Route::get('/health', fn() => response()->json(['ok' => true]));
+
+Route::post('/register',[AuthController::class,'register']);
+Route::post('/login',[AuthController::class,'login']);
+
+Route::middleware('auth:sanctum')->group(function(){
+    Route::get('/me',[AuthController::class,'me']);
+    Route::post('/logout',[AuthController::class,'logout']);
+
+    Route::get('/products',[ProductController::class,'index']);
+    Route::post('/products',[ProductController::class,'store']);
+    Route::put('/products/{product}',[ProductController::class,'update']);     // ✅ ganti PUT
+    Route::patch('/products/{product}',[ProductController::class,'update']);   // ✅ optional
+    Route::delete('/products/{product}',[ProductController::class,'destroy']); // ✅ DELETE
+
+    Route::post('/transactions',[TransactionController::class,'create']);
+    Route::get('/buyer/orders',[TransactionController::class,'indexBuyer']);
+    Route::get('/seller/orders',[TransactionController::class,'indexSeller']);
+    Route::post('/transactions/{transaction}/status',[TransactionController::class,'updateStatus']);
+
+    Route::post('/reviews',[ReviewController::class,'store']);
+    Route::get('/products/{productId}/reviews',[ReviewController::class,'byProduct']);
+
+    Route::get('/categories', [CategoryController::class, 'index']);
+
+    Route::prefix('admin')->middleware('admin')->group(function(){
+        Route::get('/users',[AdminUser::class,'index']);
+        Route::post('/users/{user}/role',[AdminUser::class,'updateRole']);
+    });
+});
