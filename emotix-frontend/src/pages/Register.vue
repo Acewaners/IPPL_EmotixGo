@@ -3,6 +3,9 @@ import { ref } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { useAuth } from '../stores/auth'
 import AuthLayout from '../layouts/AuthLayout.vue'
+import Navbar from '../components/Navbar.vue'
+import Footer from '../components/Footer.vue'
+
 
 const r = useRouter()
 const auth = useAuth()
@@ -22,6 +25,7 @@ const signUpWithGoogle = () => alert('Google Sign-In belum dihubungkan')
 </script>
 
 <template>
+      <Navbar />
   <AuthLayout title="Create an account" subtitle="Enter your details below">
     <form @submit.prevent="submit" class="max-w-md w-full space-y-5">
       <input v-model="name" placeholder="Name" class="w-full h-12 border border-gray-300 rounded-md px-4 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black/10" required />
@@ -41,4 +45,6 @@ const signUpWithGoogle = () => alert('Google Sign-In belum dihubungkan')
       </p>
     </form>
   </AuthLayout>
+
+    <Footer />
 </template>

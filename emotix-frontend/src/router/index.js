@@ -5,15 +5,32 @@ const Login = () => import('../pages/Login.vue')
 const Register = () => import('../pages/Register.vue')
 const SellerProducts = () => import('../pages/SellerProducts.vue')
 const BuyerOrders = () => import('../pages/BuyerOrders.vue')
+const ContactView = () => import('../pages/ContactView.vue')
+const AboutView = () => import('../pages/About.vue')
+const Home = () => import('../pages/Home.vue')
+const wishlist = () => import('../pages/WishlistView.vue')
+const cart = () => import('../pages/CartView.vue')
+const ProductDetails = () => import('../pages/ProductDetailView.vue')
+const CheckoutView = () => import('../pages/CheckoutView.vue')
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/', redirect: '/login' },
+  { path: '/', component: Home, meta: { auth: true } },
     { path: '/login', component: Login, meta: { guest: true } },
     { path: '/register', component: Register, meta: { guest: true } },
     { path: '/seller/products', component: SellerProducts, meta: { auth: true, role: 'seller' } },
     { path: '/buyer/orders', component: BuyerOrders, meta: { auth: true, role: 'buyer' } },
+    { path: '/wishlist', component: wishlist, meta: { auth: true } },
+    { path: '/cart', component: cart,  meta: { auth: true } },
+    {
+      path: '/contact',
+      name: 'contact',
+      component: ContactView,
+    },
+    { path: '/about', name: 'about', component: AboutView },
+    { path: '/products/:id', component: ProductDetails, meta: { auth: true } },
+    { path: '/checkout', component: CheckoutView, meta: { auth: true } },
   ],
 })
 

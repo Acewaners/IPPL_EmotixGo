@@ -13,11 +13,11 @@ Route::get('/health', fn() => response()->json(['ok' => true]));
 Route::post('/register',[AuthController::class,'register']);
 Route::post('/login',[AuthController::class,'login']);
 
+Route::get('/products',[ProductController::class,'index']);
 Route::middleware('auth:sanctum')->group(function(){
     Route::get('/me',[AuthController::class,'me']);
     Route::post('/logout',[AuthController::class,'logout']);
 
-    Route::get('/products',[ProductController::class,'index']);
     Route::post('/products',[ProductController::class,'store']);
     Route::put('/products/{product}',[ProductController::class,'update']);     // ✅ ganti PUT
     Route::patch('/products/{product}',[ProductController::class,'update']);   // ✅ optional
