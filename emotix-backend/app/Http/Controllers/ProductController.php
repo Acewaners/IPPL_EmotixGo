@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
+use App\Models\Review;
+
 use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
@@ -104,4 +106,39 @@ class ProductController extends Controller
 
         return response()->json(['message' => 'Product deleted']);
     }
+
+        public function reviews(Product $product)
+    {
+        // ambil semua review untuk produk ini
+        $reviews = Review::where('product_id', $product->product_id)
+            ->with('buyer')   // biar bisa tampilkan nama buyer
+            ->latest()
+            ->get();
+
+        // summary meta
+        $meta = [
+            'count'      => $reviews->count(),
+            'avg_rating' => round($reviews->avg('rating') ?? 0, 1),
+
+            'distribution' => [
+                5 => $reviews->where('rating', 5)->count(),
+                4 => $reviews->where('rating', 4)->count(),
+                3 => $reviews->where('rating', 3)->count(),
+                2 => $reviews->where('rating', 2)->count(),
+                1 => $reviews->where('rating', 1)->count(),
+            ],
+
+            'sentiment'  => [
+                'positive' => $reviews->where('sentiment', 'positive')->count(),
+                'neutral'  => $reviews->where('sentiment', 'neutral')->count(),
+                'negative' => $reviews->where('sentiment', 'negative')->count(),
+            ],
+        ];
+
+        return response()->json([
+            'data' => $reviews,
+            'meta' => $meta,
+        ]);
+    }
+
 }

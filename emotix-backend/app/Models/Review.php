@@ -31,4 +31,9 @@ class Review extends Model
     {
         return $this->belongsTo(User::class, 'buyer_id', 'user_id');
     }
+    public function sentimentRecord()
+{
+    return $this->hasOne(Sentiment::class, 'review_id', 'review_id');
+}
+
 }
