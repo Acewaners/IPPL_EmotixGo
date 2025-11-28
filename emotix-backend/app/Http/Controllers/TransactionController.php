@@ -52,13 +52,67 @@ class TransactionController extends Controller
             ->with('details.product')->latest('transaction_date')->paginate(10);
     }
 
-    public function updateStatus(Request $r, Transaction $transaction){
-        abort_unless($r->user()->user_id === $transaction->seller_id, 403);
+    public function updateStatus(Request $r, Transaction $transaction)
+    {
         $r->validate([
-            'status'=>'required|in:pending_payment,processing,shipped,completed,failed',
-            'tracking_number'=>'nullable|max:100'
+            'status'          => 'required|in:pending_payment,processing,shipped,completed,failed',
+            'tracking_number' => 'nullable|max:100',
         ]);
-        $transaction->update($r->only('status','tracking_number'));
-        return $transaction;
+
+        $userId  = $r->user()->user_id ?? null;
+        $isSeller = $userId === $transaction->seller_id;
+        $isBuyer  = $userId === $transaction->buyer_id;
+
+        // ❗ hanya buyer atau seller yg boleh ubah
+        abort_unless($isSeller || $isBuyer, 403, 'Not allowed.');
+
+        // simpan status lama buat cek perubahan
+        $oldStatus = $transaction->status;
+
+        if ($isBuyer) {
+            // buyer cuma boleh rubah dari pending_payment -> completed
+            if (
+                $oldStatus !== 'pending_payment' ||
+                $r->input('status') !== 'completed'
+            ) {
+                abort(403, 'Buyer cannot change this status.');
+            }
+
+            // buyer tidak boleh ubah tracking_number
+            $transaction->update([
+                'status' => 'completed',
+            ]);
+
+        } else {
+            // seller: bebas ubah status & tracking_number
+            $transaction->update($r->only('status', 'tracking_number'));
+        }
+
+        // ⭐ DI SINI logika nambah SOLD per produk
+        if ($oldStatus !== 'completed' && $transaction->status === 'completed') {
+            // pastikan relasi ke details & product sudah dimuat
+            $transaction->loadMissing('details.product');
+
+            foreach ($transaction->details as $detail) {
+                if ($detail->product) {
+                    // asumsi kolomnya bernama "sold"
+                    $detail->product->increment('sold', $detail->quantity);
+                }
+            }
+        }
+
+        return $transaction->load('details.product');
     }
+    public function show(Request $r, Transaction $transaction)
+    {
+        // buyer ATAU seller boleh lihat
+        abort_unless(
+            $r->user()->user_id === $transaction->buyer_id ||
+            $r->user()->user_id === $transaction->seller_id,
+            403
+        );
+
+        return $transaction->load('details.product');
+    }
+
 }

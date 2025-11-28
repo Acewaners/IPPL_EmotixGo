@@ -22,14 +22,18 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::put('/products/{product}',[ProductController::class,'update']);     // ✅ ganti PUT
     Route::patch('/products/{product}',[ProductController::class,'update']);   // ✅ optional
     Route::delete('/products/{product}',[ProductController::class,'destroy']); // ✅ DELETE
+    Route::get('/products/{product}/reviews', [ReviewController::class, 'byProduct']);
 
     Route::post('/transactions',[TransactionController::class,'create']);
     Route::get('/buyer/orders',[TransactionController::class,'indexBuyer']);
     Route::get('/seller/orders',[TransactionController::class,'indexSeller']);
+    Route::get('/transactions/{transaction}', [TransactionController::class, 'show']);
     Route::post('/transactions/{transaction}/status',[TransactionController::class,'updateStatus']);
+    Route::get('/buyer/transactions', [TransactionController::class, 'indexBuyer']);
 
-    Route::post('/reviews',[ReviewController::class,'store']);
-    Route::get('/products/{productId}/reviews',[ReviewController::class,'byProduct']);
+    Route::get('/reviews/me', [ReviewController::class, 'myReviews']);
+    Route::post('/reviews', [ReviewController::class, 'store']);
+    Route::put('/reviews/{review}', [ReviewController::class, 'update']);
 
     Route::get('/categories', [CategoryController::class, 'index']);
 

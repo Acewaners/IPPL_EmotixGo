@@ -1,9 +1,10 @@
 <script setup>
-import { computed, reactive } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import Navbar from '../components/Navbar.vue'
 import Footer from '../components/Footer.vue'
 import { useCartStore } from '../stores/cart'
 import { useRouter, RouterLink } from 'vue-router'
+import { api } from '../lib/api'
 
 const cart = useCartStore()
 const r = useRouter()
@@ -14,6 +15,24 @@ const subtotal = computed(() => cart.cartSubtotal)
 const shipping = computed(() => 0)
 const total = computed(() => subtotal.value + shipping.value)
 
+// base URL storage (sama kayak di halaman lain)
+const STORAGE_BASE =
+  import.meta.env?.VITE_STORAGE_BASE ?? 'http://localhost:8000/storage'
+
+const productImage = (p) => {
+  if (!p) return ''
+  if (p.image_full) return p.image_full
+  if (p.image_url) return p.image_url
+  if (p.image) {
+    if (p.image.startsWith('http')) return p.image
+    return `${STORAGE_BASE}/${p.image}`
+  }
+  return ''
+}
+
+const formatPrice = (price) =>
+  `Rp. ${Number(price || 0).toLocaleString('id-ID')}`
+
 // form billing
 const billing = reactive({
   firstName: '',
@@ -23,53 +42,85 @@ const billing = reactive({
   city: '',
   phone: '',
   email: '',
-  saveInfo: true,
+  saveInfo: false,
   paymentMethod: 'qris',
   coupon: '',
 })
 
-// base URL storage (samakan dengan yang lain)
-const STORAGE_BASE =
-  import.meta.env?.VITE_STORAGE_BASE ?? 'http://localhost:8000/storage'
-
-// helper gambar produk
-const productImage = (p) => {
-  if (!p) return ''
-
-  if (p.image_full) return p.image_full
-  if (p.image_url) return p.image_url
-
-  if (p.image) {
-    if (p.image.startsWith('http')) return p.image
-    return `${STORAGE_BASE}/${p.image}`
-  }
-
-  return ''
-}
-
-const formatPrice = (price) =>
-  `Rp. ${Number(price || 0).toLocaleString('id-ID')}`
+const placing = ref(false)
 
 const applyCoupon = () => {
-  if (!billing.coupon.trim()) {
-    alert('Masukkan coupon code dulu.')
-    return
-  }
-  // logic coupon nanti diimplementasi
-  alert(`Coupon "${billing.coupon}" belum diimplementasi ya 😊`)
+  if (!billing.coupon) return
+  alert('Coupon ini masih dummy, belum diimplementasi 😊')
 }
 
-const placeOrder = () => {
-  if (!items.value.length) return
-
-  // validasi sederhana
-  if (!billing.firstName || !billing.address || !billing.city || !billing.phone || !billing.email) {
-    alert('Lengkapi semua field yang wajib diisi (*).')
-    return
+// --- INI YANG PENTING: kirim transaksi ke backend ---
+const placeOrder = async () => {
+  if (!items.value.length) {
+    return alert('Cart masih kosong, nggak ada yang bisa di-checkout.')
   }
 
-  // nanti sambungkan ke API transaksi
-  alert('Place order (belum diimplementasi).')
+  // validasi simpel billing (biar nggak kosong banget)
+  if (
+    !billing.firstName ||
+    !billing.address ||
+    !billing.city ||
+    !billing.phone ||
+    !billing.email
+  ) {
+    return alert('Lengkapi dulu data Billing Details ya.')
+  }
+
+  // ambil seller_id dari product pertama (asumsi 1 cart = 1 seller)
+  const firstItem = items.value[0]
+  const sellerId = firstItem?.product?.seller_id
+
+  if (!sellerId) {
+    return alert('seller_id tidak ditemukan di product, cek data produk dulu.')
+  }
+
+  // bentuk payload sesuai validate() di backend
+  const payload = {
+    seller_id: sellerId,
+    items: items.value.map((i) => ({
+      product_id: i.product.product_id,
+      quantity: i.quantity,
+    })),
+  }
+
+  placing.value = true
+
+  try {
+    const res = await api.post('/transactions', payload)
+
+    // bersihkan cart setelah transaksi dibuat
+    cart.clearCart()
+
+    // redirect ke halaman payment, kirim data transaksi (opsional lewat state)
+    r.push({
+      name: 'payment', // pastikan di router ada route ini
+      params: { id: res.data.transaction_id },
+      state: { trx: res.data },
+    })
+  } catch (e) {
+    const resp = e.response
+
+    // error validasi (422) dari backend
+    if (resp?.status === 422) {
+      const errors = resp.data?.errors
+      if (errors) {
+        const msg = Object.values(errors).flat().join('\n')
+        alert(msg)
+      } else {
+        alert(resp.data?.message || 'Data tidak valid.')
+      }
+    } else {
+      console.error(e)
+      alert('Checkout gagal, coba lagi sebentar lagi ya.')
+    }
+  } finally {
+    placing.value = false
+  }
 }
 </script>
 
@@ -194,7 +245,7 @@ const placeOrder = () => {
               </span>
             </div>
 
-            <div class="border-t pt-3 space-y-2 text-xs md:text-sm">
+            <div class="border-top pt-3 space-y-2 text-xs md:text-sm border-t">
               <div class="flex justify-between">
                 <span>Subtotal:</span>
                 <span>{{ formatPrice(subtotal) }}</span>
@@ -246,9 +297,10 @@ const placeOrder = () => {
           <button
             type="button"
             @click="placeOrder"
-            class="w-full bg-red-500 text-white text-xs md:text-sm py-3 rounded mt-2 hover:bg-red-600"
+            :disabled="placing"
+            class="w-full bg-red-500 text-white text-xs md:text-sm py-3 rounded mt-2 hover:bg-red-600 disabled:opacity-60"
           >
-            Place Order
+            {{ placing ? 'Processing…' : 'Place Order' }}
           </button>
         </div>
       </section>

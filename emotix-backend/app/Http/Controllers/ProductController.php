@@ -10,15 +10,23 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        // jika seller login, tampilkan hanya produknya sendiri
-        $query = Product::with(['category', 'seller']);
+        $query = Product::with(['category', 'seller'])
+            ->withCount('reviews')                 // reviews_count
+            ->withAvg('reviews', 'rating');        // reviews_avg_rating
 
+        // kalau yang login seller → tampilkan hanya produknya
         if ($request->user() && $request->user()->role === 'seller') {
             $query->where('seller_id', $request->user()->user_id);
         }
 
-        // opsional: sort terbaru dulu
-        $products = $query->orderByDesc('product_id')->get();
+        // ambil data + mapping rating agar rapi
+        $products = $query->orderByDesc('product_id')->get()
+            ->map(function ($p) {
+                $p->rating = round($p->reviews_avg_rating ?? 0, 1);
+                $p->rating_count = $p->reviews_count;
+                unset($p->reviews_avg_rating);
+                return $p;
+            });
 
         return response()->json([
             'data' => $products,

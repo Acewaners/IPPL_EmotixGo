@@ -99,7 +99,7 @@ const goToBuyerCancellations = () => {
 
 const goToBuyerReviews = () => {
   if (!auth.token) return r.push('/login')
-  r.push('/buyer/reviews')
+  r.push('/my-reviews')
   closeAccountMenu()
 }
 
@@ -243,14 +243,6 @@ const handleAccountMobile = () => {
                     <span>My Order</span>
                   </button>
 
-                  <button
-                    type="button"
-                    @click="goToBuyerCancellations"
-                    class="w-full flex items-center gap-2 px-4 py-2 hover:bg-teal-600 text-left"
-                  >
-                    <XMarkIcon class="w-4 h-4" />
-                    <span>My Cancellations</span>
-                  </button>
 
                   <button
                     type="button"
@@ -282,14 +274,6 @@ const handleAccountMobile = () => {
                     <span>Seller Orders</span>
                   </button>
 
-                  <button
-                    type="button"
-                    @click="goToSellerDashboard"
-                    class="w-full flex items-center gap-2 px-4 py-2 hover:bg-teal-600 text-left"
-                  >
-                    <TagIcon class="w-4 h-4" />
-                    <span>My Products</span>
-                  </button>
                 </template>
 
                 <!-- MENU GENERIC -->

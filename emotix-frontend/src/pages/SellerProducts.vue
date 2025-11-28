@@ -337,12 +337,10 @@ const activeProducts = computed(
 
                   <!-- Rating (default 0) -->
                   <td class="p-3">
-                    <span class="inline-flex items-center gap-1 text-yellow-500">
-                      ★
-                      <span class="text-gray-700">{{
-                        p.rating ?? 0
-                      }}</span>
-                    </span>
+  <span>★ {{ p.rating ?? 0 }}</span>
+  <span class="text-[11px] text-gray-400" v-if="p.rating_count">
+    ({{ p.rating_count }})
+  </span>
                   </td>
 
                   <!-- Actions -->

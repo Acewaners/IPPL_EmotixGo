@@ -12,6 +12,9 @@ const wishlist = () => import('../pages/WishlistView.vue')
 const cart = () => import('../pages/CartView.vue')
 const ProductDetails = () => import('../pages/ProductDetailView.vue')
 const CheckoutView = () => import('../pages/CheckoutView.vue')
+const PaymentView = () => import('../pages/PaymentView.vue')
+const SellerOrders = () => import('../pages/SellerOrdersView.vue')
+const myReviews = () => import('../pages/MyReviewsView.vue')
 
 const router = createRouter({
   history: createWebHistory(),
@@ -28,9 +31,13 @@ const router = createRouter({
       name: 'contact',
       component: ContactView,
     },
+    { path: '/my-reviews',name:'buyer-reviews' ,component: myReviews, meta: { auth: true } },
+    { path: '/seller/orders', component: SellerOrders, meta: { auth: true, role: 'seller' } },
     { path: '/about', name: 'about', component: AboutView },
     { path: '/products/:id', component: ProductDetails, meta: { auth: true } },
     { path: '/checkout', component: CheckoutView, meta: { auth: true } },
+    { path: '/payment/:id', name:'payment', component: PaymentView, meta: { auth: true } },
+
   ],
 })
 
