@@ -8,7 +8,12 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\Admin\UserController as AdminUser;
 
-Route::get('/health', fn() => response()->json(['ok' => true]));
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'ok',
+        'timestamp' => now()->toDateTimeString()
+    ], 200);
+});
 
 Route::post('/register',[AuthController::class,'register']);
 Route::post('/login',[AuthController::class,'login']);
