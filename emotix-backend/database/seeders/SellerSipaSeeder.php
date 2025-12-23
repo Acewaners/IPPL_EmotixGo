@@ -11,10 +11,10 @@ class SellerSipaSeeder extends Seeder
     public function run(): void
     {
         User::updateOrCreate(
-            ['email' => 'dhio@example.com'],
+            ['email' => 'ujang@example.com'],
             [
-                'name'     => 'dhio',
-                'password' => Hash::make('dhio123'), // ganti sesuai mau
+                'name'     => 'ujang',
+                'password' => Hash::make('ujang123'), // ganti sesuai mau
                 'role'     => 'seller',
             ]
         );
