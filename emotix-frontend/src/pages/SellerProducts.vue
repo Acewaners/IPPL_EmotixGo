@@ -88,26 +88,20 @@ async function createProduct(payload) {
     if (payload.stock == null || Number(payload.stock) < 0)
       return alert('Stok tidak valid')
 
-    if (!payload.image) {
-      await api.post('/products', {
-        category_id: Number(payload.category_id),
-        product_name: payload.product_name,
-        price: Number(payload.price),
-        stock: Number(payload.stock),
-        description: payload.description ?? '',
-      })
-    } else {
-      const form = new FormData()
-      form.append('category_id', String(payload.category_id))
-      form.append('product_name', payload.product_name)
-      form.append('price', String(payload.price))
-      form.append('stock', String(payload.stock))
-      form.append('description', payload.description ?? '')
+    const form = new FormData()
+    form.append('category_id', String(payload.category_id))
+    form.append('product_name', payload.product_name)
+    form.append('price', String(payload.price))
+    form.append('stock', String(payload.stock))
+    form.append('description', payload.description ?? '')
+
+    if (payload.image) {
       form.append('image', payload.image)
-      await api.post('/products', form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
     }
+
+    await api.post('/products', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
 
     openCreate.value = false
     await loadProducts()
@@ -132,18 +126,18 @@ function startEdit(row) {
 async function updateProduct(payload) {
   try {
     const form = new FormData()
-    form.append('_method', 'PUT')
-    if (payload.category_id != null)
-      form.append('category_id', String(payload.category_id))
-    if (payload.product_name != null)
-      form.append('product_name', payload.product_name ?? '')
-    if (payload.price != null)
-      form.append('price', String(payload.price ?? 0))
-    if (payload.stock != null)
-      form.append('stock', String(payload.stock ?? 0))
-    if (payload.description != null)
-      form.append('description', payload.description ?? '')
-    if (payload.image) form.append('image', payload.image)
+    
+    form.append('_method', 'PUT') 
+
+    if (payload.category_id) form.append('category_id', String(payload.category_id))
+    if (payload.product_name) form.append('product_name', payload.product_name)
+    if (payload.price) form.append('price', String(payload.price))
+    if (payload.stock) form.append('stock', String(payload.stock))
+    if (payload.description) form.append('description', payload.description)
+
+    if (payload.image instanceof File) {
+       form.append('image', payload.image)
+    }
 
     await api.post(`/products/${editing.value.product_id}`, form, {
       headers: { 'Content-Type': 'multipart/form-data' },
