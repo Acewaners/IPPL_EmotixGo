@@ -4,7 +4,7 @@ import Navbar from '../components/Navbar.vue'
 import Footer from '../components/Footer.vue'
 import { useCartStore } from '../stores/cart'
 import { useRouter, RouterLink } from 'vue-router'
-import api from '../lib/api' // Import API helper
+import { api } from '../lib/api' // Import API helper
 
 const cart = useCartStore()
 const r = useRouter()
