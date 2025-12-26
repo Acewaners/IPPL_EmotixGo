@@ -1,12 +1,14 @@
 <script setup>
-import { computed, reactive } from 'vue'
+import { computed, reactive, ref } from 'vue' // Tambah ref
 import Navbar from '../components/Navbar.vue'
 import Footer from '../components/Footer.vue'
 import { useCartStore } from '../stores/cart'
 import { useRouter, RouterLink } from 'vue-router'
+import api from '../lib/api' // Import API helper
 
 const cart = useCartStore()
 const r = useRouter()
+const isLoading = ref(false) // State loading
 
 // data cart
 const items = computed(() => cart.cartItems)
@@ -28,22 +30,19 @@ const billing = reactive({
   coupon: '',
 })
 
-// base URL storage (samakan dengan yang lain)
+// base URL storage
 const STORAGE_BASE =
   import.meta.env?.VITE_STORAGE_BASE ?? 'http://localhost:8000/storage'
 
 // helper gambar produk
 const productImage = (p) => {
   if (!p) return ''
-
   if (p.image_full) return p.image_full
   if (p.image_url) return p.image_url
-
   if (p.image) {
     if (p.image.startsWith('http')) return p.image
     return `${STORAGE_BASE}/${p.image}`
   }
-
   return ''
 }
 
@@ -55,21 +54,65 @@ const applyCoupon = () => {
     alert('Masukkan coupon code dulu.')
     return
   }
-  // logic coupon nanti diimplementasi
   alert(`Coupon "${billing.coupon}" belum diimplementasi ya 😊`)
 }
 
-const placeOrder = () => {
+// LOGIKA UTAMA CHECKOUT
+const placeOrder = async () => {
   if (!items.value.length) return
 
-  // validasi sederhana
+  // 1. Validasi Form
   if (!billing.firstName || !billing.address || !billing.city || !billing.phone || !billing.email) {
     alert('Lengkapi semua field yang wajib diisi (*).')
     return
   }
 
-  // nanti sambungkan ke API transaksi
-  alert('Place order (belum diimplementasi).')
+  isLoading.value = true
+
+  try {
+    // 2. Grouping Items per Seller
+    // Karena backend TransactionController butuh 'seller_id' spesifik per transaksi
+    const itemsBySeller = {}
+
+    items.value.forEach((item) => {
+      const sellerId = item.product.seller_id
+      if (!sellerId) {
+        throw new Error(`Produk ${item.product.product_name} tidak memiliki data seller yang valid.`)
+      }
+
+      if (!itemsBySeller[sellerId]) {
+        itemsBySeller[sellerId] = []
+      }
+
+      itemsBySeller[sellerId].push({
+        product_id: item.product.product_id,
+        quantity: item.quantity
+      })
+    })
+
+    // 3. Buat Request untuk setiap Seller (Promise.all agar paralel)
+    // Jika beli dari 2 toko berbeda, akan jadi 2 transaksi
+    const orderPromises = Object.keys(itemsBySeller).map((sellerId) => {
+      return api.post('/transactions', {
+        seller_id: sellerId,
+        items: itemsBySeller[sellerId]
+      })
+    })
+
+    await Promise.all(orderPromises)
+
+    // 4. Sukses
+    alert('Order berhasil dibuat! Terima kasih.')
+    cart.clearCart() // Kosongkan keranjang (pastikan ada action ini di store cart Anda)
+    r.push('/buyer/orders') // Redirect ke halaman list pesanan (pastikan route ini ada)
+
+  } catch (error) {
+    console.error(error)
+    const msg = error.response?.data?.message || 'Gagal memproses order.'
+    alert(`Error: ${msg}`)
+  } finally {
+    isLoading.value = false
+  }
 }
 </script>
 
@@ -246,9 +289,10 @@ const placeOrder = () => {
           <button
             type="button"
             @click="placeOrder"
-            class="w-full bg-red-500 text-white text-xs md:text-sm py-3 rounded mt-2 hover:bg-red-600"
+            :disabled="isLoading"
+            class="w-full bg-red-500 text-white text-xs md:text-sm py-3 rounded mt-2 hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            Place Order
+            {{ isLoading ? 'Processing...' : 'Place Order' }}
           </button>
         </div>
       </section>

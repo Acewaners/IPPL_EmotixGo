@@ -73,6 +73,7 @@ export const useCartStore = defineStore('cart', {
 
     clearCart() {
       this.cartItems = []
+      localStorage.removeItem('cart')
     },
 
     moveWishlistToCart() {
