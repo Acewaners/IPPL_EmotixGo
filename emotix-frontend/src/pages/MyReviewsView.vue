@@ -122,7 +122,7 @@ const submitReview = async (productId) => {
   const text = (drafts.value[productId] || '').trim()
   const rating = ratingDrafts.value[productId] || 0
 
-  if (!text || rating < 1) return
+  if (!text) return
 
   submitting.value = true
   savingId.value = productId
@@ -301,8 +301,8 @@ onMounted(loadAll)
                     :disabled="
                       submitting ||
                       !drafts[item.product.product_id] ||
-                      drafts[item.product.product_id].trim().length < 5 ||
-                      (ratingDrafts[item.product.product_id] || 0) < 1
+                      drafts[item.product.product_id].trim().length < 5
+                      // Syarat rating dihapus, jadi user bisa klik walau bintang masih kosong
                     "
                     @click="submitReview(item.product.product_id)"
                   >

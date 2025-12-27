@@ -6,6 +6,7 @@ import Footer from '../components/Footer.vue'
 import { api } from '../lib/api'
 import { useCartStore } from '../stores/cart'
 import { HeartIcon, StarIcon } from '@heroicons/vue/24/solid'
+import { CheckCircleIcon, XCircleIcon } from '@heroicons/vue/24/solid'
 
 const router = useRouter()
 const route = useRoute()
@@ -179,6 +180,47 @@ const sentimentPercent = computed(() => {
     negative: Math.round((negative / total) * 100),
   }
 })
+
+const newReview = ref({
+  text: '',
+  rating: null // Default null agar AI yang bekerja jika user tidak isi
+})
+const isSubmitting = ref(false)
+const submitError = ref('')
+
+// --- 2. Fungsi Submit Review ---
+const submitReview = async () => {
+  // Validasi: Cukup cek teks saja, rating boleh kosong
+  if (!newReview.value.text || newReview.value.text.length < 5) {
+    submitError.value = 'Tulis review minimal 5 karakter.'
+    return
+  }
+
+  isSubmitting.value = true
+  submitError.value = ''
+
+  try {
+    // Kirim ke Backend
+    await api.post('/reviews', {
+      product_id: product.value.product_id,
+      review_text: newReview.value.text,
+      rating: newReview.value.rating // Bisa null/kosong
+    })
+
+    // Reset form jika sukses
+    newReview.value.text = ''
+    newReview.value.rating = null
+    
+    // Reload list review biar muncul yang baru
+    await loadReviews(product.value.product_id)
+    
+  } catch (e) {
+    // Handle error (misal: belum beli barang)
+    submitError.value = e.response?.data?.message || 'Gagal mengirim review.'
+  } finally {
+    isSubmitting.value = false
+  }
+}
 </script>
 
 <template>
@@ -366,6 +408,53 @@ const sentimentPercent = computed(() => {
 
             <!-- WRAPPER: Sentiment card + list review di kolom kanan -->
             <div class="space-y-4">
+              <div class="border rounded-xl p-4 bg-white space-y-3 shadow-sm">
+                <h3 class="text-sm font-semibold">Tulis Ulasan Anda</h3>
+
+                <div class="flex items-center gap-1">
+                  <span class="text-xs text-gray-500 mr-2">Rating (Opsional):</span>
+                  <button 
+                    v-for="star in 5" 
+                    :key="star"
+                    type="button"
+                    @click="newReview.rating = star"
+                    class="focus:outline-none transition-colors"
+                  >
+                    <StarIcon 
+                      class="w-5 h-5" 
+                      :class="star <= (newReview.rating || 0) ? 'text-yellow-400' : 'text-gray-300'"
+                    />
+                  </button>
+                  <button 
+                    v-if="newReview.rating" 
+                    @click="newReview.rating = null"
+                    class="text-[10px] text-red-500 underline ml-2"
+                  >
+                    Reset (Biarkan AI menilai)
+                  </button>
+                </div>
+
+                <textarea
+                  v-model="newReview.text"
+                  rows="3"
+                  placeholder="Bagaimana kualitas produk ini? Ceritakan pengalamanmu..."
+                  class="w-full border rounded-md p-2 text-xs focus:ring-1 focus:ring-black focus:outline-none"
+                ></textarea>
+
+                <p v-if="submitError" class="text-xs text-red-500">
+                  {{ submitError }}
+                </p>
+
+                <button
+                  type="button"
+                  @click="submitReview"
+                  :disabled="!newReview.text || newReview.text.length < 5 || isSubmitting"
+                  class="w-full bg-black text-white text-xs font-medium py-2 rounded-md hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
+                >
+                  {{ isSubmitting ? 'Mengirim...' : 'Kirim Review' }}
+                </button>
+              </div>
+              
               <!-- 🎯 CARD Customer Reviews & AI Sentiment -->
               <div class="border rounded-xl p-4 bg-gray-50 space-y-4 text-xs mt-35">
                 <h3 class="text-sm font-semibold">

@@ -105,7 +105,6 @@ const placeOrder = async () => {
   } catch (e) {
     const resp = e.response
 
-    // error validasi (422) dari backend
     if (resp?.status === 422) {
       const errors = resp.data?.errors
       if (errors) {

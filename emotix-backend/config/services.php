@@ -15,8 +15,8 @@ return [
     */
 
     'huggingface' => [
-        'token' => env('HUGGINGFACE_API_KEY'),
-        'model' => env('HUGGINGFACE_MODEL', 'nlptown/bert-base-multilingual-uncased-sentiment'),
+        'api_key' => env('HUGGINGFACE_API_KEY'), // Ini membaca dari .env
+        'model'   => env('HUGGINGFACE_MODEL'),   // Ini membaca dari .env
     ],
 
     'postmark' => [
