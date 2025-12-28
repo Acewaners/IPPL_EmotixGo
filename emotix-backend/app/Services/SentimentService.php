@@ -30,7 +30,7 @@ class SentimentService
         $apiKey = config('services.huggingface.api_key');
         Log::info("Menggunakan Token: " . substr($apiKey, 0, 5) . "...");
         $model  = config('services.huggingface.model');
-        $url = "https://router.huggingface.co/hf-inference/models/{$model}";
+        $url = "https://api-inference.huggingface.co/models/{$model}";
 
         try {
             $response = Http::withHeaders([
