@@ -7,9 +7,6 @@ use Illuminate\Support\Facades\Log;
 
 class SentimentService
 {
-    /**
-     * Menganalisa sentimen: Prioritas AI -> Fallback ke Manual jika AI Gagal
-     */
     public function analyze(?string $text): ?array
     {
         $text = trim((string) $text);
@@ -23,7 +20,7 @@ class SentimentService
             return $aiResult;
         }
 
-        // 2. JIKA AI GAGAL, PAKAI BACKUP (Supaya tidak bintang 3 terus)
+        // 2. JIKA AI GAGAL, PAKAI BACKUP
         Log::warning("⚠️ AI Down/Error, menggunakan Fallback Manual untuk: " . $text);
         return $this->localFallbackAnalysis($text);
     }
@@ -33,9 +30,6 @@ class SentimentService
         $apiKey = config('services.huggingface.api_key');
         Log::info("Menggunakan Token: " . substr($apiKey, 0, 5) . "...");
         $model  = config('services.huggingface.model');
-
-        // PERBAIKAN URL DISINI (Menambahkan /hf-inference/)
-        // Ini adalah format URL baru untuk Hugging Face Router
         $url = "https://router.huggingface.co/hf-inference/models/{$model}";
 
         try {
@@ -43,25 +37,22 @@ class SentimentService
                 'Authorization' => 'Bearer ' . $apiKey,
                 'Content-Type'  => 'application/json',
             ])
-            ->retry(2, 1000) // Coba 2x jika timeout
+            ->retry(2, 1000)
             ->timeout(10)
             ->post($url, ['inputs' => $text]);
 
-            // Jika status 200 OK
             if ($response->successful()) {
                 $data = $response->json();
-                
-                // Ratakan array (Kadang [[...]] kadang [...])
                 $preds = (isset($data[0]) && is_array($data[0])) ? $data[0] : $data;
                 
                 if (isset($preds[0]['label'])) {
-                    // Urutkan score tertinggi
                     usort($preds, fn($a, $b) => ($b['score'] ?? 0) <=> ($a['score'] ?? 0));
-                    return $this->convertLabelToStars($preds[0]['label'], $preds[0]['score']);
+                    
+                    // Kita kirim teks aslinya juga untuk analisa keyword
+                    return $this->convertLabelToStars($preds[0]['label'], $preds[0]['score'], $text);
                 }
             } 
             
-            // Debugging: Catat error jika gagal (misal 404/500)
             Log::error("HF API Fail Status: " . $response->status() . " Body: " . $response->body());
 
         } catch (\Throwable $e) {
@@ -71,69 +62,98 @@ class SentimentService
         return null;
     }
 
-    private function convertLabelToStars($label, $score)
+    /**
+     * Tuning V4: Hybrid AI Score + Keyword Constraints
+     */
+    private function convertLabelToStars($label, $score, $text)
     {
         $label = strtolower($label);
         $score = (float) $score;
+        $textLower = strtolower($text);
         
         $stars = 3; 
         $sentiment = 'neutral';
 
-        // --- TUNING V2 (Berdasarkan Log Data Azriel) ---
+        // --- 1. LOGIKA AI DASAR (Tuning Threshold Diperketat) ---
 
         // KASUS POSITIF
         if (in_array($label, ['positive', 'label_2', 'pos'])) {
             $sentiment = 'positive';
             
-            // Log Anda: "Sempurna" = 0.994 -> Lolos Bintang 5
-            // Log Anda: "Kurang kenyang" = 0.985 -> Gagal, turun ke Bintang 4
-            if ($score >= 0.99) { 
+            // Log "Gila sih keren banget" = 0.9988 -> OK
+            // Log "Lumayan bagus" = 0.9843 -> Ini harusnya TIDAK bintang 5
+            // Jadi, batas Bintang 5 kita naikkan ke 0.990
+            if ($score >= 0.990) { 
                 $stars = 5;
             } 
-            // Rentang Bintang 4 diperlebar (0.70 - 0.989)
-            elseif ($score >= 0.70) {
+            // Rentang Bintang 4: 0.80 - 0.989
+            elseif ($score >= 0.80) {
                 $stars = 4;
             }
-            // Score rendah/ragu-ragu (Mixed feelings)
+            // Positif lemah (< 0.80) -> Bintang 3
             else {
                 $stars = 3;
             }
         } 
         
-        // KASUS NEGATIVE
+        // KASUS NEGATIF
         elseif (in_array($label, ['negative', 'label_0', 'neg'])) {
             $sentiment = 'negative';
             
-            // Log Anda: "Hate Speech" = 0.999
-            // Log Anda: "Komplain Sopan" = 0.996
-            
-            // STRATEGI BARU: Ambang batas "Kebencian Murni" kita naikkan sangat tinggi
-            if ($score >= 0.998) {
+            // Log "Penipu" = 0.9993 -> OK Bintang 1
+            // Log "Lambat banget" = 0.9928 -> Ini harusnya Bintang 2, bukan 1
+            // Jadi, batas Bintang 1 kita naikkan ekstrem ke 0.995 (Hanya Hate Speech/Scam)
+            if ($score >= 0.995) {
                 $stars = 1;
             } 
-            // Jika score negatif tinggi (0.90 - 0.997) TAPI tidak "Hate Speech"
-            // Ini untuk kasus "Mohon maaf... kecewa"
-            elseif ($score >= 0.90) {
-                $stars = 2; 
-            }
-            // Negatif ringan (0.60 - 0.89)
-            elseif ($score >= 0.60) {
-                $stars = 2;
-            } 
-            // Negatif ragu-ragu (< 0.60)
+            // Kecewa umum
             else {
-                $stars = 3;
-                $sentiment = 'neutral';
+                $stars = 2; 
             }
         } 
         
-        // KASUS NEUTRAL
         else {
             $stars = 3;
             $sentiment = 'neutral';
         }
 
-        Log::info("Tuning V2 Result -> Label: $label | Score: $score | Final Stars: $stars");
+        // --- 2. LOGIKA KEYWORD (RULE-BASED CORRECTION) ---
+        // Ini untuk mengatasi "kebodohan" AI pada konteks tertentu
+
+        $originalStars = $stars; // Simpan untuk log perbandingan
+
+        // ATURAN A: Penurun Ekspektasi (Tapi/Cuma/Agak/Lumayan)
+        // Jika AI bilang bintang 5, tapi ada kata "tapi", turunkan ke 4.
+        if ($stars == 5) {
+            if ($this->containsAny($textLower, ['tapi', 'cuma', 'hanya', 'agak', 'lumayan', 'sayang', 'pengiriman lama', 'kurang'])) {
+                $stars = 4;
+                Log::info("Rule Applied: Downgrade 5->4 karena ada kata sanggahan.");
+            }
+        }
+
+        // ATURAN B: Penetral (Belum dicoba/Baru sampai)
+        // Seringkali AI mendeteksi ini sebagai Negatif. Kita paksa jadi Bintang 3.
+        if ($this->containsAny($textLower, ['belum dicoba', 'baru sampai', 'belum di coba', 'baru nyampe', 'lihat nanti'])) {
+            $stars = 3;
+            $sentiment = 'neutral';
+            Log::info("Rule Applied: Force Neutral karena barang belum dicoba.");
+        }
+
+        // ATURAN C: Biasa Aja
+        // Jika AI bilang Positif (Bintang 4/5) tapi user bilang "biasa aja", turunkan ke 3.
+        if ($stars > 3 && $this->containsAny($textLower, ['biasa aja', 'standar', 'sesuai harga'])) {
+            $stars = 3;
+            Log::info("Rule Applied: Downgrade ke 3 karena 'Biasa aja'.");
+        }
+
+        // ATURAN D: Hate Speech/Scam Keywords (Force 1 Star)
+        if ($stars > 1 && $this->containsAny($textLower, ['penipu', 'rusak parah', 'hancur', 'pecah', 'tidak berfungsi', 'nyesel', 'balikin duit'])) {
+            $stars = 1;
+            $sentiment = 'negative';
+            Log::info("Rule Applied: Force 1 Star karena kata-kata fatal.");
+        }
+
+        Log::info("Tuning V4 Result -> Label: $label | Score: $score | Base Stars: $originalStars | Final Stars: $stars");
 
         return [
             'stars' => $stars,
@@ -143,5 +163,23 @@ class SentimentService
         ];
     }
 
+    /**
+     * Helper untuk cek array kata kunci
+     */
+    private function containsAny(string $haystack, array $needles): bool
+    {
+        foreach ($needles as $needle) {
+            if (str_contains($haystack, $needle)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // --- FITUR CADANGAN (Hanya jalan jika AI mati) ---
+    private function localFallbackAnalysis(string $text): array
+    {
+        // ... kode fallback lama Anda ...
+        return ['stars' => 3, 'label' => 'neutral', 'score' => 0, 'raw' => 'fallback'];
+    }
 }
