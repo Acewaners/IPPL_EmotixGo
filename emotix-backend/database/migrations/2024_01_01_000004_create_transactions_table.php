@@ -1,32 +1,32 @@
 <?php
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
-    public function up(): void {
-        Schema::create('products', function (Blueprint $table) {
-            // Sesuai protected $primaryKey = 'product_id'
-            $table->id('product_id');
+return new class extends Migration
+{
+    public function up(): void
+    {
+        // Pastikan disini tertulis 'transactions', BUKAN 'products'
+        Schema::create('transactions', function (Blueprint $table) {
+            $table->id('transaction_id'); // Primary Key
             
-            // Relasi ke users.user_id (Seller)
+            // Relasi ke users (buyer & seller)
+            $table->foreignId('buyer_id')->constrained('users', 'user_id')->onDelete('cascade');
             $table->foreignId('seller_id')->constrained('users', 'user_id')->onDelete('cascade');
             
-            // Relasi ke categories.id
-            $table->foreignId('category_id')->constrained('categories', 'id')->onDelete('cascade');
-            
-            $table->string('product_name');
-            $table->text('description')->nullable();
-            $table->decimal('price', 12, 2);
-            $table->integer('stock');
-            $table->string('image')->nullable();
-            $table->integer('sold')->default(0); // Kolom ini sering Anda update via migrasi lain, lebih baik ada dari awal.
+            $table->date('transaction_date')->nullable();
+            $table->decimal('total_price', 12, 2);
+            $table->string('status')->default('pending');
+            $table->string('tracking_number')->nullable();
             
             $table->timestamps();
         });
     }
 
-    public function down(): void {
-        Schema::dropIfExists('products');
+    public function down(): void
+    {
+        Schema::dropIfExists('transactions');
     }
 };
