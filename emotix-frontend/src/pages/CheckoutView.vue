@@ -124,184 +124,231 @@ const placeOrder = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col bg-white">
+  <div class="min-h-screen flex flex-col bg-gray-50 font-sans text-gray-900">
     <Navbar />
 
-    <main class="flex-1 max-w-6xl mx-auto px-4 lg:px-0 py-10 space-y-8">
-      <!-- breadcrumb -->
-      <section class="text-xs md:text-sm text-gray-500">
-        <RouterLink to="/" class="hover:text-black">Home</RouterLink>
-        <span class="mx-1">/</span>
-        <RouterLink to="/cart" class="hover:text-black">Cart</RouterLink>
-        <span class="mx-1">/</span>
+    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
+      
+      <nav class="flex items-center text-sm text-gray-500 mb-10">
+        <RouterLink to="/" class="hover:text-black transition-colors">Home</RouterLink>
+        <span class="mx-2 text-gray-300">/</span>
+        <RouterLink to="/cart" class="hover:text-black transition-colors">Cart</RouterLink>
+        <span class="mx-2 text-gray-300">/</span>
         <span class="text-black font-medium">Checkout</span>
-      </section>
+      </nav>
 
-      <section class="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
-        <!-- Billing form -->
-        <div class="lg:col-span-2">
-          <h1 class="text-xl font-semibold mb-6">Billing Details</h1>
+      <section class="grid grid-cols-1 lg:grid-cols-12 gap-10 xl:gap-16 items-start">
+        
+        <div class="lg:col-span-7">
+          <h1 class="text-3xl font-bold tracking-tight mb-8 text-gray-900">Billing Details</h1>
 
-          <form class="space-y-4" @submit.prevent="placeOrder">
-            <div class="space-y-1">
-              <label class="text-xs font-medium text-gray-700">First Name*</label>
+          <form id="checkout-form" class="space-y-6" @submit.prevent="placeOrder">
+            
+            <div class="space-y-2">
+              <label class="text-sm font-semibold text-gray-700">First Name <span class="text-red-500">*</span></label>
               <input
                 v-model="billing.firstName"
                 type="text"
-                class="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-800"
+                class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
+                placeholder="Enter your first name"
               />
             </div>
 
-            <div class="space-y-1">
-              <label class="text-xs font-medium text-gray-700">Company Name</label>
+            <div class="space-y-2">
+              <label class="text-sm font-semibold text-gray-700">Company Name</label>
               <input
                 v-model="billing.company"
                 type="text"
-                class="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-800"
+                class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
+                placeholder="Company name (optional)"
               />
             </div>
 
-            <div class="space-y-1">
-              <label class="text-xs font-medium text-gray-700">Street Address*</label>
+            <div class="space-y-2">
+              <label class="text-sm font-semibold text-gray-700">Street Address <span class="text-red-500">*</span></label>
               <input
                 v-model="billing.address"
                 type="text"
-                class="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-800"
+                class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
+                placeholder="House number and street name"
               />
             </div>
 
-            <div class="space-y-1">
-              <label class="text-xs font-medium text-gray-700">
-                Apartment, floor, etc. (optional)
-              </label>
+            <div class="space-y-2">
+              <label class="text-sm font-semibold text-gray-700">Apartment, floor, etc. (optional)</label>
               <input
                 v-model="billing.address2"
                 type="text"
-                class="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-800"
+                class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
+                placeholder="Apartment, suite, unit, etc."
               />
             </div>
 
-            <div class="space-y-1">
-              <label class="text-xs font-medium text-gray-700">Town/City*</label>
+            <div class="space-y-2">
+              <label class="text-sm font-semibold text-gray-700">Town / City <span class="text-red-500">*</span></label>
               <input
                 v-model="billing.city"
                 type="text"
-                class="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-800"
+                class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
+                placeholder="Enter your city"
               />
             </div>
 
-            <div class="space-y-1">
-              <label class="text-xs font-medium text-gray-700">Phone Number*</label>
+            <div class="space-y-2">
+              <label class="text-sm font-semibold text-gray-700">Phone Number <span class="text-red-500">*</span></label>
               <input
                 v-model="billing.phone"
                 type="tel"
-                class="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-800"
+                class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
+                placeholder="0812..."
               />
             </div>
 
-            <div class="space-y-1">
-              <label class="text-xs font-medium text-gray-700">Email Address*</label>
+            <div class="space-y-2">
+              <label class="text-sm font-semibold text-gray-700">Email Address <span class="text-red-500">*</span></label>
               <input
                 v-model="billing.email"
                 type="email"
-                class="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-800"
+                class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
+                placeholder="email@domain.com"
               />
             </div>
 
-            <label class="mt-3 flex items-center gap-2 text-xs text-gray-600">
-              <input
-                v-model="billing.saveInfo"
-                type="checkbox"
-                class="rounded border-gray-300 text-gray-900 focus:ring-gray-800"
-              />
-              <span>
-                Save this information for faster check-out next time
-              </span>
-            </label>
+            <div class="pt-2">
+              <label class="inline-flex items-center gap-3 cursor-pointer group">
+                <div class="relative flex items-center">
+                  <input
+                    v-model="billing.saveInfo"
+                    type="checkbox"
+                    class="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-gray-300 transition-all checked:border-black checked:bg-black hover:border-black"
+                  />
+                  <svg
+                    class="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity peer-checked:opacity-100"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 12 12"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M10 3L4.5 8.5L2 6"
+                      stroke="white"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </div>
+                <span class="text-sm text-gray-600 group-hover:text-black transition-colors">
+                  Save this information for faster check-out next time
+                </span>
+              </label>
+            </div>
           </form>
         </div>
 
-        <!-- Order summary -->
-        <div class="border rounded-lg p-5 space-y-5">
-          <div class="space-y-3 text-sm">
-            <div
-              v-for="item in items"
-              :key="item.product.product_id"
-              class="flex items-center justify-between gap-3"
-            >
-              <div class="flex items-center gap-3">
-                <img
-                  :src="productImage(item.product)"
-                  alt=""
-                  class="w-12 h-12 object-cover rounded border"
-                />
-                <span class="text-xs md:text-sm">
-                  {{ item.product.product_name }}
+        <div class="lg:col-span-5">
+          <div class="bg-white p-8 rounded-3xl border border-gray-100 shadow-xl shadow-gray-100/50 sticky top-28">
+            <h2 class="text-xl font-bold text-gray-900 mb-6">Order Summary</h2>
+
+            <div class="space-y-4 mb-6 max-h-80 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-200">
+              <div
+                v-for="item in items"
+                :key="item.product.product_id"
+                class="flex items-center justify-between gap-4 group"
+              >
+                <div class="flex items-center gap-4">
+                  <div class="relative w-14 h-14 rounded-lg bg-gray-50 border border-gray-100 p-1 flex-shrink-0">
+                    <img
+                      :src="productImage(item.product)"
+                      :alt="item.product.product_name"
+                      class="w-full h-full object-contain mix-blend-multiply"
+                    />
+                    <span class="absolute -top-2 -right-2 bg-gray-900 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full">
+                      {{ item.quantity }}
+                    </span>
+                  </div>
+                  <span class="text-sm font-medium text-gray-700 group-hover:text-black transition-colors line-clamp-2">
+                    {{ item.product.product_name }}
+                  </span>
+                </div>
+                <span class="text-sm font-semibold text-gray-900 whitespace-nowrap">
+                  {{ formatPrice(item.product.price * item.quantity) }}
                 </span>
               </div>
-              <span class="text-xs md:text-sm">
-                {{ formatPrice(item.product.price) }}
-              </span>
             </div>
 
-            <div class="border-top pt-3 space-y-2 text-xs md:text-sm border-t">
-              <div class="flex justify-between">
-                <span>Subtotal:</span>
-                <span>{{ formatPrice(subtotal) }}</span>
+            <div class="space-y-3 pt-6 border-t border-gray-100 text-sm">
+              <div class="flex justify-between text-gray-500">
+                <span>Subtotal</span>
+                <span class="font-medium text-gray-900">{{ formatPrice(subtotal) }}</span>
               </div>
-              <div class="flex justify-between">
-                <span>Shipping:</span>
-                <span>Free</span>
+              <div class="flex justify-between text-gray-500">
+                <span>Shipping</span>
+                <span class="font-medium text-green-600">Free</span>
               </div>
-              <div class="flex justify-between font-semibold pt-1">
-                <span>Total:</span>
-                <span>{{ formatPrice(total) }}</span>
+              <div class="border-t border-gray-100 my-2"></div>
+              <div class="flex justify-between items-center">
+                <span class="text-base font-bold text-gray-900">Total</span>
+                <span class="text-xl font-extrabold text-gray-900">{{ formatPrice(total) }}</span>
               </div>
             </div>
-          </div>
 
-          <!-- Payment method -->
-          <div class="space-y-2 text-xs md:text-sm">
-            <p class="font-semibold">Payment Method</p>
-            <label class="flex items-center gap-2">
-              <input
-                v-model="billing.paymentMethod"
-                type="radio"
-                value="qris"
-                class="text-gray-900 focus:ring-gray-800"
-              />
-              <span>QRIS</span>
-            </label>
-          </div>
-
-          <!-- Coupon -->
-          <div class="flex flex-col gap-2">
-            <div class="flex gap-2">
-              <input
-                v-model="billing.coupon"
-                type="text"
-                placeholder="Coupon Code"
-                class="flex-1 border rounded px-3 py-2 text-xs md:text-sm"
-              />
-              <button
-                type="button"
-                @click="applyCoupon"
-                class="px-4 py-2 bg-red-500 text-white text-xs md:text-sm rounded hover:bg-red-600"
+            <div class="mt-8 space-y-4">
+              <h3 class="text-sm font-bold text-gray-900">Payment Method</h3>
+              <label 
+                class="flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all"
+                :class="billing.paymentMethod === 'qris' ? 'border-black bg-gray-50' : 'border-gray-200 hover:border-gray-300'"
               >
-                Apply Coupon
-              </button>
+                <div class="flex items-center gap-3">
+                  <div class="relative flex items-center">
+                    <input
+                      v-model="billing.paymentMethod"
+                      type="radio"
+                      value="qris"
+                      class="peer h-4 w-4 cursor-pointer appearance-none rounded-full border border-gray-300 transition-all checked:border-black checked:bg-black"
+                    />
+                    <div class="pointer-events-none absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white opacity-0 peer-checked:opacity-100"></div>
+                  </div>
+                  <span class="text-sm font-medium">QRIS / E-Wallet</span>
+                </div>
+                <div class="flex gap-1 opacity-60">
+                   <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png" class="h-4 object-contain" alt="QRIS" />
+                </div>
+              </label>
             </div>
-          </div>
 
-          <button
-            type="button"
-            @click="placeOrder"
-            :disabled="placing"
-            class="w-full bg-red-500 text-white text-xs md:text-sm py-3 rounded mt-2 hover:bg-red-600 disabled:opacity-60"
-          >
-            {{ placing ? 'Processing…' : 'Place Order' }}
-          </button>
+            <div class="mt-6">
+              <div class="flex gap-2">
+                <input
+                  v-model="billing.coupon"
+                  type="text"
+                  placeholder="Coupon Code"
+                  class="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
+                />
+                <button
+                  type="button"
+                  @click="applyCoupon"
+                  class="px-5 py-3 bg-gray-900 text-white text-sm font-bold rounded-xl hover:bg-black transition-colors"
+                >
+                  Apply
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              @click="placeOrder"
+              :disabled="placing"
+              class="w-full mt-6 bg-red-600 text-white text-sm font-bold py-4 rounded-xl hover:bg-red-700 disabled:opacity-70 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2"
+            >
+              <span v-if="placing" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <span>{{ placing ? 'Processing...' : 'Place Order' }}</span>
+            </button>
+            
+          </div>
         </div>
+
       </section>
     </main>
 

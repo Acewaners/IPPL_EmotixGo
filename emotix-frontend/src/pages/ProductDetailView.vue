@@ -224,388 +224,330 @@ const submitReview = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col bg-white">
+  <div class="min-h-screen flex flex-col bg-white font-sans text-gray-900">
     <Navbar />
 
     <main class="flex-1">
-      <div class="max-w-6xl mx-auto px-4 lg:px-0 py-10 space-y-8">
-        <!-- breadcrumb -->
-        <nav class="text-xs md:text-sm text-gray-500">
-          <RouterLink to="/" class="hover:text-black">Home</RouterLink>
-          <span class="mx-1">/</span>
-          <span>Gaming</span>
-          <span class="mx-1">/</span>
-          <span class="text-black font-medium">
-            {{ product?.product_name || 'Product' }}
-          </span>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        
+        <nav class="flex items-center text-sm text-gray-500 mb-8 overflow-x-auto whitespace-nowrap pb-2">
+          <RouterLink to="/" class="hover:text-black transition-colors">Home</RouterLink>
+          <span class="mx-2 text-gray-300">/</span>
+          <span class="hover:text-black transition-colors cursor-pointer">Products</span>
+          <span class="mx-2 text-gray-300">/</span>
+          <span class="text-black font-medium truncate">{{ product?.product_name || 'Loading...' }}</span>
         </nav>
 
-        <!-- loading / error -->
-        <div v-if="loading" class="py-16 text-center text-gray-500">
-          Loading detail produk...
-        </div>
-        <div v-else-if="error" class="py-16 text-center text-red-500">
-          {{ error }}
+        <div v-if="loading" class="flex flex-col items-center justify-center py-32 space-y-4">
+          <div class="w-10 h-10 border-4 border-gray-200 border-t-black rounded-full animate-spin"></div>
+          <p class="text-gray-500 text-sm">Memuat detail produk...</p>
         </div>
 
-        <!-- ====== CONTENT UTAMA ====== -->
-        <div v-else-if="product" class="grid md:grid-cols-3 gap-8 items-start">
-          <!-- ================== KIRI: Gambar + Deskripsi ================== -->
-          <div class="md:col-span-2 space-y-6">
-            <!-- Gambar + thumbnail -->
-            <div class="grid grid-cols-4 md:grid-cols-5 gap-4 items-start">
-              <!-- thumbnails -->
-              <div class="col-span-1 flex md:flex-col gap-3 order-2 md:order-1">
-                <button
-                  v-for="(img, idx) in galleryImages"
-                  :key="idx"
-                  type="button"
-                  class="w-20 h-20 border rounded-lg overflow-hidden flex items-center justify-center bg-gray-50 hover:border-black transition"
-                  @click="selectedImage = img"
-                >
-                  <img :src="img" alt="" class="w-full h-full object-cover" />
-                </button>
-              </div>
+        <div v-else-if="error" class="py-32 text-center">
+          <div class="inline-flex bg-red-50 p-4 rounded-full mb-4">
+            <XCircleIcon class="w-8 h-8 text-red-500" />
+          </div>
+          <h3 class="text-lg font-bold text-gray-900">Produk Tidak Ditemukan</h3>
+          <p class="text-gray-500 mt-1 mb-6">{{ error }}</p>
+          <RouterLink to="/" class="px-6 py-2 bg-black text-white rounded-full text-sm font-medium hover:bg-gray-800">
+            Kembali ke Home
+          </RouterLink>
+        </div>
 
-              <!-- main image -->
-              <div
-                class="col-span-3 md:col-span-4 order-1 md:order-2 border rounded-xl bg-gray-50 flex items-center justify-center px-6 py-8"
-              >
-                <img
-                  :src="selectedImage || fullImage"
-                  alt=""
-                  class="w-full max-h-[360px] object-contain"
-                />
+        <div v-else-if="product" class="grid grid-cols-1 lg:grid-cols-12 gap-10 xl:gap-16">
+          
+          <div class="lg:col-span-7 space-y-6">
+            <div class="aspect-[4/3] w-full bg-gray-50 rounded-3xl border border-gray-100 flex items-center justify-center p-8 overflow-hidden relative group">
+              <img
+                :src="selectedImage || fullImage"
+                :alt="product.product_name"
+                class="w-full h-full object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
+              />
+              <div v-if="!inStock" class="absolute top-4 left-4 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                Out of Stock
               </div>
             </div>
 
-            <!-- Deskripsi (sejajar dengan gambar, masih di kolom kiri) -->
-            <section class="text-sm leading-relaxed space-y-2">
-              <h2 class="text-base font-semibold">
-                {{ product.product_name }} – Deskripsi Produk
-              </h2>
-              <p class="text-gray-700 whitespace-pre-line">
-                {{ product.description || 'Belum ada deskripsi untuk produk ini.' }}
-              </p>
-            </section>
+            <div class="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+              <button
+                v-for="(img, idx) in galleryImages"
+                :key="idx"
+                type="button"
+                @click="selectedImage = img"
+                class="relative w-20 h-20 md:w-24 md:h-24 flex-shrink-0 bg-gray-50 rounded-xl border-2 overflow-hidden transition-all duration-200"
+                :class="selectedImage === img ? 'border-black ring-1 ring-black' : 'border-transparent hover:border-gray-300'"
+              >
+                <img :src="img" class="w-full h-full object-contain p-2 mix-blend-multiply" />
+              </button>
+            </div>
+
+            <div class="hidden lg:block pt-8 border-t border-gray-100">
+              <h3 class="text-lg font-bold text-gray-900 mb-4">Deskripsi Produk</h3>
+              <div class="prose prose-sm text-gray-600 max-w-none whitespace-pre-line leading-relaxed">
+                {{ product.description || 'Tidak ada deskripsi tersedia.' }}
+              </div>
+            </div>
           </div>
 
-          <!-- ================== KANAN: Info + Free Delivery + Sentiment + List Review ================== -->
-          <aside class="md:col-span-1 space-y-5">
-            <!-- Info produk -->
-            <div class="space-y-4">
-              <div>
-                <h1 class="text-lg md:text-xl font-semibold">
-                  {{ product.product_name }}
-                </h1>
-
-                <!-- rating & stock -->
-                <div class="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                  <div class="flex items-center gap-1">
-                    <StarIcon class="w-4 h-4 text-yellow-400" />
-                    <span>{{ avgRating.toFixed(1) }}</span>
-                    <span class="mx-1">|</span>
-                    <span>{{ reviewCount }} Reviews</span>
-                  </div>
-                  <span class="text-gray-300">|</span>
-                  <span
-                    :class="[
-                      'text-xs',
-                      inStock ? 'text-emerald-500' : 'text-red-500'
-                    ]"
-                  >
-                    {{ inStock ? 'In Stock' : 'Out of Stock' }}
-                  </span>
+          <div class="lg:col-span-5 space-y-8">
+            
+            <div>
+              <p class="text-sm text-red-500 font-bold uppercase tracking-wider mb-1">{{ product.category?.name || 'Electronics' }}</p>
+              <h1 class="text-3xl md:text-4xl font-black text-gray-900 leading-tight mb-3">
+                {{ product.product_name }}
+              </h1>
+              
+              <div class="flex items-center flex-wrap gap-4 text-sm">
+                <div class="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-md border border-yellow-100">
+                  <StarIcon class="w-4 h-4 text-yellow-500" />
+                  <span class="font-bold text-yellow-700">{{ avgRating.toFixed(1) }}</span>
+                  <span class="text-yellow-600/70">({{ reviewCount }} reviews)</span>
                 </div>
+                
+                <span class="h-4 w-px bg-gray-300"></span>
+                
+                <span 
+                  class="flex items-center gap-1.5 font-medium"
+                  :class="inStock ? 'text-green-600' : 'text-red-600'"
+                >
+                  <CheckCircleIcon v-if="inStock" class="w-4 h-4" />
+                  <XCircleIcon v-else class="w-4 h-4" />
+                  {{ inStock ? `In Stock (${product.stock} units)` : 'Out of Stock' }}
+                </span>
+              </div>
+            </div>
+
+            <div class="flex items-baseline gap-4">
+              <span class="text-4xl font-bold text-gray-900 tracking-tight">
+                {{ formatPrice(product.price) }}
+              </span>
               </div>
 
-              <!-- price -->
-              <div class="space-y-1">
-                <p class="text-2xl font-semibold text-red-500">
-                  {{ formatPrice(product.price) }}
-                </p>
-                <p class="text-xs text-gray-400">
-                  Stok: {{ product.stock ?? 0 }}
-                </p>
-              </div>
+            <div class="border-t border-gray-100"></div>
 
-              <!-- qty + buy now + wishlist -->
+            <div class="space-y-6">
               <div class="flex items-center gap-4">
-                <!-- qty -->
-                <div class="flex items-center border rounded-md overflow-hidden">
-                  <button
-                    type="button"
-                    class="px-3 py-2 text-sm border-r hover:bg-gray-50"
-                    @click="decreaseQty"
+                <div class="flex items-center border border-gray-200 rounded-full px-2 py-1 w-fit shadow-sm hover:shadow-md transition-shadow bg-white">
+  
+                  <button 
+                    @click="decreaseQty" 
+                    class="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:text-black hover:bg-gray-100 transition-all active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed"
+                    :disabled="quantity <= 1"
                   >
-                    -
+                    <span class="text-lg font-medium leading-none mb-0.5">-</span>
                   </button>
-                  <input
-                    type="number"
-                    min="1"
-                    class="w-12 text-center text-sm focus:outline-none"
-                    :value="quantity"
+
+                  <input 
+                    type="number" 
+                    :value="quantity" 
                     @input="handleQtyInput"
+                    class="w-12 text-center bg-transparent font-bold text-gray-900 text-sm focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
-                  <button
-                    type="button"
-                    class="px-3 py-2 text-sm border-l hover:bg-gray-50"
-                    @click="increaseQty"
+
+                  <button 
+                    @click="increaseQty" 
+                    class="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:text-black hover:bg-gray-100 transition-all active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed"
+                    :disabled="!inStock || quantity >= product.stock"
                   >
-                    +
+                    <span class="text-lg font-medium leading-none mb-0.5">+</span>
                   </button>
+                  
                 </div>
 
-                <!-- buy now -->
+                <button 
+                  @click="toggleWishlist"
+                  class="group flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 hover:border-red-200 hover:bg-red-50 transition-all"
+                >
+                  <HeartIcon 
+                    class="w-5 h-5 transition-colors" 
+                    :class="isFavorite ? 'text-red-500' : 'text-gray-400 group-hover:text-red-500'" 
+                  />
+                  <span class="text-sm font-medium" :class="isFavorite ? 'text-red-600' : 'text-gray-600'">
+                    {{ isFavorite ? 'Saved' : 'Wishlist' }}
+                  </span>
+                </button>
+              </div>
+
+              <div class="flex flex-col sm:flex-row gap-3">
                 <button
-                  type="button"
-                  class="flex-1 bg-red-500 text-white text-sm font-medium py-3 rounded-md hover:bg-red-600 disabled:opacity-60 disabled:cursor-not-allowed"
+                  @click="addToCart"
                   :disabled="!inStock"
+                  class="flex-1 px-8 py-4 bg-white border-2 border-black text-black rounded-xl font-bold text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  Add to Cart
+                </button>
+                <button
                   @click="buyNow"
+                  :disabled="!inStock"
+                  class="flex-1 px-8 py-4 bg-black text-white rounded-xl font-bold text-sm shadow-xl hover:bg-gray-900 hover:shadow-2xl hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 transition-all"
                 >
                   Buy Now
                 </button>
-
-                <!-- heart -->
-                <button
-                  type="button"
-                  @click="toggleWishlist"
-                  class="w-10 h-10 rounded-md border flex items-center justify-center hover:bg-gray-50"
-                >
-                  <HeartIcon
-                    class="w-5 h-5"
-                    :class="isFavorite ? 'text-red-500' : 'text-gray-500'"
-                  />
-                </button>
               </div>
             </div>
 
-            <!-- Free Delivery + Return -->
-            <div class="border rounded-lg divide-y text-xs bg-white">
-              <div class="flex items-start gap-3 px-4 py-3">
-                <div class="mt-1 text-xl">🚚</div>
+            <div class="grid grid-cols-2 gap-4 pt-6">
+              <div class="p-4 border border-gray-100 rounded-xl bg-gray-50/50 flex items-start gap-3">
+                <div class="text-2xl">🚚</div>
                 <div>
-                  <p class="font-semibold text-gray-800">
-                    Free Delivery
-                  </p>
-                  <p class="text-gray-500">
-                    Enter your postal code for delivery availability.
-                  </p>
+                  <h4 class="font-bold text-sm text-gray-900">Free Delivery</h4>
+                  <p class="text-xs text-gray-500 mt-0.5">Enter your postal code for availability.</p>
                 </div>
               </div>
-              <div class="flex items-start gap-3 px-4 py-3">
-                <div class="mt-1 text-xl">↩️</div>
+              <div class="p-4 border border-gray-100 rounded-xl bg-gray-50/50 flex items-start gap-3">
+                <div class="text-2xl">🛡️</div>
                 <div>
-                  <p class="font-semibold text-gray-800">
-                    Return Delivery
-                  </p>
-                  <p class="text-gray-500">
-                    Free 30 Days Delivery Returns. Details.
-                  </p>
+                  <h4 class="font-bold text-sm text-gray-900">Return Delivery</h4>
+                  <p class="text-xs text-gray-500 mt-0.5">Free 30 Days Delivery Returns.</p>
                 </div>
               </div>
             </div>
 
-            <!-- WRAPPER: Sentiment card + list review di kolom kanan -->
-            <div class="space-y-4">
-              <div class="border rounded-xl p-4 bg-white space-y-3 shadow-sm">
-                <h3 class="text-sm font-semibold">Tulis Ulasan Anda</h3>
+            <div class="lg:hidden pt-8 border-t border-gray-100">
+              <h3 class="text-lg font-bold text-gray-900 mb-4">Description</h3>
+              <div class="prose prose-sm text-gray-600 whitespace-pre-line leading-relaxed">
+                {{ product.description || 'Tidak ada deskripsi tersedia.' }}
+              </div>
+            </div>
 
-                <div class="flex items-center gap-1">
-                  <span class="text-xs text-gray-500 mr-2">Rating (Opsional):</span>
-                  <button 
-                    v-for="star in 5" 
-                    :key="star"
-                    type="button"
-                    @click="newReview.rating = star"
-                    class="focus:outline-none transition-colors"
-                  >
-                    <StarIcon 
-                      class="w-5 h-5" 
-                      :class="star <= (newReview.rating || 0) ? 'text-yellow-400' : 'text-gray-300'"
-                    />
-                  </button>
+            <div class="pt-8 border-t border-gray-100 space-y-8">
+              
+              <div class="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+                <h3 class="font-bold text-gray-900 mb-4">Tulis Ulasan</h3>
+                
+                <div class="flex items-center gap-2 mb-4">
+                  <span class="text-xs font-bold text-gray-500 uppercase tracking-wide">Rating</span>
+                  <div class="flex">
+                    <button 
+                      v-for="star in 5" 
+                      :key="star"
+                      @click="newReview.rating = star"
+                      class="p-1 focus:outline-none transition-transform hover:scale-110"
+                    >
+                      <StarIcon 
+                        class="w-6 h-6" 
+                        :class="star <= (newReview.rating || 0) ? 'text-yellow-400' : 'text-gray-300'"
+                      />
+                    </button>
+                  </div>
                   <button 
                     v-if="newReview.rating" 
                     @click="newReview.rating = null"
-                    class="text-[10px] text-red-500 underline ml-2"
+                    class="text-xs text-red-500 underline ml-auto font-medium"
                   >
-                    Reset (Biarkan AI menilai)
+                    Reset (Auto-AI)
                   </button>
                 </div>
 
                 <textarea
                   v-model="newReview.text"
                   rows="3"
-                  placeholder="Bagaimana kualitas produk ini? Ceritakan pengalamanmu..."
-                  class="w-full border rounded-md p-2 text-xs focus:ring-1 focus:ring-black focus:outline-none"
+                  class="w-full bg-white border border-gray-200 rounded-xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all mb-3 resize-none"
+                  placeholder="Ceritakan pengalaman Anda menggunakan produk ini..."
                 ></textarea>
 
-                <p v-if="submitError" class="text-xs text-red-500">
+                <div v-if="submitError" class="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg mb-3">
                   {{ submitError }}
-                </p>
+                </div>
 
                 <button
-                  type="button"
                   @click="submitReview"
                   :disabled="!newReview.text || newReview.text.length < 5 || isSubmitting"
-                  class="w-full bg-black text-white text-xs font-medium py-2 rounded-md hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
+                  class="w-full bg-black text-white text-sm font-bold py-3 rounded-xl hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
                   {{ isSubmitting ? 'Mengirim...' : 'Kirim Review' }}
                 </button>
               </div>
-              
-              <!-- 🎯 CARD Customer Reviews & AI Sentiment -->
-              <div class="border rounded-xl p-4 bg-gray-50 space-y-4 text-xs mt-35">
-                <h3 class="text-sm font-semibold">
-                  Customer Reviews & Sentiment
-                </h3>
 
-                <!-- Overall rating -->
+              <div class="space-y-4">
                 <div class="flex items-center justify-between">
-                  <div>
-                    <p class="text-lg font-semibold flex items-center gap-1">
-                      <StarIcon class="w-4 h-4 text-yellow-400" />
-                      <span>{{ avgRating.toFixed(1) }}</span>
-                      <span class="text-[11px] text-gray-400">/ 5</span>
-                    </p>
-                    <p class="text-[11px] text-gray-500">
-                      {{ reviewCount }} total reviews
-                    </p>
-                  </div>
+                  <h3 class="font-bold text-gray-900 flex items-center gap-2">
+                    <span>AI Sentiment Analysis</span>
+                    <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] rounded-full uppercase tracking-wider">Beta</span>
+                  </h3>
                 </div>
 
-                <!-- AI Sentiment Analysis -->
-                <div class="border-t pt-4 space-y-3">
-                  <div class="flex items-center gap-2 text-xs font-semibold text-gray-800">
-                    <span class="text-emerald-500">📈</span>
-                    <span>AI Sentiment Analysis</span>
-                  </div>
-
-                  <!-- 3 kartu kecil -->
-                  <div class="grid grid-cols-3 gap-2 text-[11px]">
-                    <div class="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2">
-                      <p class="font-semibold text-emerald-700 flex items-center gap-1">
-                        😊 Positive
-                      </p>
-                      <p class="text-lg font-bold text-emerald-700 leading-none">
-                        {{ sentimentPercent.positive }}<span class="text-xs font-normal">%</span>
-                      </p>
+                <div class="space-y-3">
+                  <div class="space-y-1">
+                    <div class="flex justify-between text-xs font-medium">
+                      <span class="text-emerald-700">Positive 😊</span>
+                      <span class="text-emerald-700">{{ sentimentPercent.positive }}%</span>
                     </div>
-
-                    <div class="rounded-lg border border-amber-100 bg-amber-50 px-3 py-2">
-                      <p class="font-semibold text-amber-700 flex items-center gap-1">
-                        😐 Neutral
-                      </p>
-                      <p class="text-lg font-bold text-amber-700 leading-none">
-                        {{ sentimentPercent.neutral }}<span class="text-xs font-normal">%</span>
-                      </p>
-                    </div>
-
-                    <div class="rounded-lg border border-rose-100 bg-rose-50 px-3 py-2">
-                      <p class="font-semibold text-rose-700 flex items-center gap-1">
-                        😟 Negative
-                      </p>
-                      <p class="text-lg font-bold text-rose-700 leading-none">
-                        {{ sentimentPercent.negative }}<span class="text-xs font-normal">%</span>
-                      </p>
+                    <div class="h-2 w-full bg-emerald-50 rounded-full overflow-hidden">
+                      <div class="h-full bg-emerald-500 rounded-full transition-all duration-1000" :style="{ width: sentimentPercent.positive + '%' }"></div>
                     </div>
                   </div>
 
-                  <!-- mini bar chart -->
-                  <div class="mt-2 border rounded-lg bg-white px-4 py-3">
-                    <div class="h-32 flex items-end justify-between gap-4">
-                      <!-- Positive -->
-                      <div class="flex-1 flex flex-col items-center gap-1">
-                        <div class="relative w-full h-24 bg-gray-50 rounded-md overflow-hidden">
-                          <div
-                            class="absolute bottom-0 left-0 w-full bg-emerald-400 rounded-t-md"
-                            :style="{ height: sentimentPercent.positive + '%' }"
-                          />
+                  <div class="space-y-1">
+                    <div class="flex justify-between text-xs font-medium">
+                      <span class="text-amber-700">Neutral 😐</span>
+                      <span class="text-amber-700">{{ sentimentPercent.neutral }}%</span>
+                    </div>
+                    <div class="h-2 w-full bg-amber-50 rounded-full overflow-hidden">
+                      <div class="h-full bg-amber-400 rounded-full transition-all duration-1000" :style="{ width: sentimentPercent.neutral + '%' }"></div>
+                    </div>
+                  </div>
+
+                  <div class="space-y-1">
+                    <div class="flex justify-between text-xs font-medium">
+                      <span class="text-rose-700">Negative 😟</span>
+                      <span class="text-rose-700">{{ sentimentPercent.negative }}%</span>
+                    </div>
+                    <div class="h-2 w-full bg-rose-50 rounded-full overflow-hidden">
+                      <div class="h-full bg-rose-500 rounded-full transition-all duration-1000" :style="{ width: sentimentPercent.negative + '%' }"></div>
+                    </div>
+                  </div>
+                </div>
+                <p class="text-[10px] text-gray-400 italic text-center mt-2">
+                  *Analisis sentimen dihasilkan otomatis oleh AI berdasarkan ulasan pengguna.
+                </p>
+              </div>
+
+              <div>
+                <h3 class="font-bold text-gray-900 mb-6 flex items-center justify-between">
+                  Customer Reviews
+                  <span class="text-sm font-normal text-gray-500">{{ reviewCount }} total</span>
+                </h3>
+
+                <div v-if="reviewsLoading" class="text-center py-8">
+                  <div class="inline-block w-6 h-6 border-2 border-gray-200 border-t-black rounded-full animate-spin"></div>
+                </div>
+                
+                <div v-else-if="!reviews.length" class="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                  <p class="text-sm text-gray-500">Belum ada ulasan. Jadilah yang pertama memberikan review!</p>
+                </div>
+
+                <div v-else class="space-y-4">
+                  <div
+                    v-for="rev in reviews"
+                    :key="rev.review_id"
+                    class="p-5 border border-gray-100 rounded-2xl bg-white hover:shadow-sm transition-shadow"
+                  >
+                    <div class="flex justify-between items-start mb-3">
+                      <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-500 text-sm">
+                          {{ (rev.buyer?.name || 'U').charAt(0).toUpperCase() }}
                         </div>
-                        <span class="text-[11px] text-gray-600">Positive</span>
-                      </div>
-                      <!-- Neutral -->
-                      <div class="flex-1 flex flex-col items-center gap-1">
-                        <div class="relative w-full h-24 bg-gray-50 rounded-md overflow-hidden">
-                          <div
-                            class="absolute bottom-0 left-0 w-full bg-amber-400 rounded-t-md"
-                            :style="{ height: sentimentPercent.neutral + '%' }"
-                          />
+                        <div>
+                          <p class="font-bold text-sm text-gray-900">{{ rev.buyer?.name || 'Verified Buyer' }}</p>
+                          <div class="flex items-center gap-2">
+                            <div class="flex text-yellow-400">
+                              <StarIcon v-for="n in 5" :key="n" class="w-3 h-3" :class="n <= rev.rating ? 'fill-current' : 'text-gray-200'" />
+                            </div>
+                            <span class="text-xs text-gray-400">• {{ new Date(rev.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) }}</span>
+                          </div>
                         </div>
-                        <span class="text-[11px] text-gray-600">Neutral</span>
-                      </div>
-                      <!-- Negative -->
-                      <div class="flex-1 flex flex-col items-center gap-1">
-                        <div class="relative w-full h-24 bg-gray-50 rounded-md overflow-hidden">
-                          <div
-                            class="absolute bottom-0 left-0 w-full bg-rose-400 rounded-t-md"
-                            :style="{ height: sentimentPercent.negative + '%' }"
-                          />
-                        </div>
-                        <span class="text-[11px] text-gray-600">Negative</span>
                       </div>
                     </div>
-
-                    <p class="mt-2 text-[10px] text-gray-400 leading-snug">
-                      *AI menganalisis sentiment berdasarkan kata kunci dan konteks
-                      dalam review pelanggan.
+                    <p class="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+                      {{ rev.review_text }}
                     </p>
                   </div>
                 </div>
               </div>
 
-              <!-- 🎯 LIST CUSTOMER REVIEWS (DI BAWAH CARD SENTIMENT) -->
-              <section class="border rounded-xl p-4 bg-white space-y-4 text-xs">
-                <h3 class="text-sm font-semibold">
-                  Customer Reviews
-                </h3>
-
-                <div v-if="reviewsLoading" class="text-xs text-gray-500">
-                  Loading reviews...
-                </div>
-                <div v-else-if="reviewsError" class="text-xs text-red-500">
-                  {{ reviewsError }}
-                </div>
-                <div v-else-if="!reviews.length" class="text-xs text-gray-500">
-                  Belum ada review untuk produk ini. Jadilah yang pertama.
-                </div>
-
-                <div v-else class="space-y-3">
-                  <div
-                    v-for="rev in reviews"
-                    :key="rev.review_id"
-                    class="border rounded-lg px-4 py-3 text-xs md:text-sm bg-white"
-                  >
-                    <div class="flex justify-between items-start gap-2">
-                      <div>
-                        <p class="font-semibold text-gray-800">
-                          {{ rev.buyer?.name || 'Verified Buyer' }}
-                        </p>
-                        <p class="text-[11px] text-gray-400">
-                          {{ new Date(rev.created_at).toLocaleDateString('id-ID') }}
-                        </p>
-                      </div>
-                      <div class="flex items-center gap-1 text-yellow-400 text-[11px]">
-                        <StarIcon
-                          v-for="n in rev.rating"
-                          :key="n"
-                          class="w-3 h-3"
-                        />
-                        <span class="text-gray-600 ml-1">
-                          {{ rev.rating }}★
-                        </span>
-                      </div>
-                    </div>
-
-                    <p class="mt-2 text-gray-700 whitespace-pre-line">
-                      {{ rev.review_text }}
-                    </p>
-                  </div>
-                </div>
-              </section>
             </div>
-          </aside>
+          </div>
         </div>
       </div>
     </main>

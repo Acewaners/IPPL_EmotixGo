@@ -98,15 +98,15 @@ class ReviewController extends Controller
         $data = $r->validate([
             'product_id'  => 'required|integer|exists:products,product_id',
             'review_text' => 'required|string|min:5',
-            'rating'      => 'nullable|integer|min:1|max:5',
+            'rating'      => 'nullable|integer|min:0|max:5',
         ]);
 
         // Cek pembelian...
-        $hasBought = TransactionDetail::where('product_id', $data['product_id'])
-            ->whereHas('transaction', function ($q) use ($r) {
-                $q->where('buyer_id', $r->user()->user_id)->where('status', 'completed');
-            })->exists();
-        abort_unless($hasBought, 422, 'You can only review completed orders.');
+        // $hasBought = TransactionDetail::where('product_id', $data['product_id'])
+        //     ->whereHas('transaction', function ($q) use ($r) {
+        //         $q->where('buyer_id', $r->user()->user_id)->where('status', 'completed');
+        //     })->exists();
+        // abort_unless($hasBought, 422, 'You can only review completed orders.');
 
         // 2. 🧠 PANGGIL AI (Indonesian Model)
         // Panggil service yang menjalankan script Python di atas
@@ -166,7 +166,7 @@ class ReviewController extends Controller
         // 2. Validasi Input
         $data = $r->validate([
             'review_text' => 'required|string|min:5',
-            'rating'      => 'nullable|integer|min:1|max:5', // Boleh null
+            'rating'      => 'nullable|integer|min:0|max:5', // Boleh null
         ]);
 
         // 3. 🧠 PANGGIL AI (Analisis Ulang)

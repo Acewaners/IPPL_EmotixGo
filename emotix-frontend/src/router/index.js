@@ -15,6 +15,8 @@ const CheckoutView = () => import('../pages/CheckoutView.vue')
 const PaymentView = () => import('../pages/PaymentView.vue')
 const SellerOrders = () => import('../pages/SellerOrdersView.vue')
 const myReviews = () => import('../pages/MyReviewsView.vue')
+const AllProductsView = () => import('../pages/AllProductsView.vue')
+const SuccessView = () => import('../pages/SuccessView.vue')
 
 const router = createRouter({
   history: createWebHistory(),
@@ -30,6 +32,18 @@ const router = createRouter({
       path: '/contact',
       name: 'contact',
       component: ContactView,
+    },
+    { 
+      path: '/payment/success', 
+      name: 'payment-success', 
+      component: SuccessView, 
+      meta: { auth: true } 
+    },
+    { 
+      path: '/products', 
+      name: 'all-products', 
+      component: AllProductsView, 
+      meta: { auth: true } // Sesuaikan auth jika halaman ini publik atau butuh login
     },
     { path: '/my-reviews',name:'buyer-reviews' ,component: myReviews, meta: { auth: true } },
     { path: '/seller/orders', component: SellerOrders, meta: { auth: true, role: 'seller' } },

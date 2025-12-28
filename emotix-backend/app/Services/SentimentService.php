@@ -93,7 +93,7 @@ class SentimentService
             // Rentang Bintang 4 diperlebar (0.70 - 0.989)
             elseif ($score >= 0.70) {
                 $stars = 4;
-            } 
+            }
             // Score rendah/ragu-ragu (Mixed feelings)
             else {
                 $stars = 3;

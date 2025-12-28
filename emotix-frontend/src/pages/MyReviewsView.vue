@@ -164,7 +164,7 @@ const saveEdit = async () => {
   if (!editId.value) return
   const text = editDraft.value.trim()
   const rating = editRating.value || 0
-  if (!text || rating < 1) return
+  if (!text) return
 
   submitting.value = true
   error.value = ''
@@ -191,258 +191,208 @@ onMounted(loadAll)
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col bg-white">
+  <div class="min-h-screen flex flex-col bg-gray-50 font-sans text-gray-900">
     <Navbar />
 
-    <main class="flex-1 max-w-6xl mx-auto px-4 lg:px-0 py-10 space-y-8">
-      <!-- Header -->
-      <section class="space-y-1">
-        <h1 class="text-xl font-semibold">My Reviews</h1>
-        <p class="text-sm text-gray-500">
-          Lihat dan tulis ulasan untuk produk yang sudah kamu beli, sayang 💚
-        </p>
-      </section>
+    <main class="flex-1 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
+      
+      <div class="mb-8">
+        <nav class="text-sm text-gray-500 mb-4 flex items-center gap-2">
+          <RouterLink to="/" class="hover:text-black transition-colors">Home</RouterLink>
+          <span class="text-gray-300">/</span>
+          <span class="font-semibold text-black">My Reviews</span>
+        </nav>
+        <h1 class="text-3xl font-black tracking-tight text-gray-900">Ulasan Saya</h1>
+        <p class="text-gray-500 mt-1">Kelola ulasan untuk produk yang telah Anda beli.</p>
+      </div>
 
-      <!-- state -->
-      <section v-if="loading" class="py-10 text-center text-gray-500 text-sm">
-        Loading...
-      </section>
+      <div v-if="loading" class="flex flex-col items-center justify-center py-20">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+        <p class="mt-4 text-sm text-gray-500">Memuat data ulasan...</p>
+      </div>
 
-      <section v-else-if="error" class="py-10 text-center text-red-500 text-sm">
-        {{ error }}
-      </section>
+      <div v-else-if="error" class="mb-6 p-4 rounded-xl bg-red-50 border border-red-100 flex items-center gap-3 text-red-700">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 shrink-0"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+        <span class="text-sm font-medium">{{ error }}</span>
+      </div>
 
-      <section v-else class="space-y-8">
-        <!-- Belum direview -->
-        <div class="space-y-4">
-          <div class="flex items-center justify-between">
-            <h2 class="text-sm font-semibold">Perlu Review</h2>
-            <span class="text-xs text-gray-400">
-              {{ needReview.length }} produk
-            </span>
+      <div v-else class="space-y-12">
+        
+        <section>
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold text-gray-900">Menunggu Ulasan</h2>
+            <span class="bg-black text-white text-xs font-bold px-2 py-1 rounded-md">{{ needReview.length }}</span>
           </div>
 
-          <div
-            v-if="!needReview.length"
-            class="text-xs text-gray-500 border rounded-lg px-4 py-3 bg-gray-50"
-          >
-            Semua produk dari pesanan yang selesai sudah kamu review.
+          <div v-if="!needReview.length" class="bg-white border border-dashed border-gray-300 rounded-2xl p-10 text-center">
+            <p class="text-gray-500 text-sm">Tidak ada produk yang perlu diulas saat ini.</p>
           </div>
 
-          <div class="space-y-4">
+          <div v-else class="grid gap-6">
             <div
               v-for="item in needReview"
               :key="item.order.transaction_id + '-' + item.product.product_id"
-              class="border rounded-lg p-4 flex flex-col gap-3 md:flex-row md:items-start"
+              class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden p-6 hover:shadow-md transition-shadow duration-300"
             >
-              <!-- kiri: produk -->
-              <div class="flex items-start gap-3 md:w-1/3">
-                <div
-                  class="w-14 h-14 rounded border bg-gray-50 overflow-hidden flex items-center justify-center"
-                >
-                  <img
-                    :src="productImage(item.product)"
-                    alt=""
-                    class="w-full h-full object-cover"
-                  />
+              <div class="flex flex-col md:flex-row gap-6">
+                <div class="flex items-start gap-4 md:w-1/3">
+                  <div class="w-20 h-20 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center shrink-0">
+                    <img
+                      :src="productImage(item.product)"
+                      :alt="item.product.product_name"
+                      class="w-full h-full object-contain p-2 mix-blend-multiply"
+                    />
+                  </div>
+                  <div>
+                    <h3 class="font-bold text-gray-900 text-sm line-clamp-2">{{ item.product.product_name }}</h3>
+                    <p class="text-xs text-gray-500 mt-1">Order #{{ item.order.transaction_id }}</p>
+                    <p class="text-xs text-gray-400">{{ formatDateTime(item.order.transaction_date || item.order.created_at) }}</p>
+                  </div>
                 </div>
-                <div class="text-xs md:text-sm">
-                  <p class="font-semibold">
-                    {{ item.product.product_name }}
-                  </p>
-                  <p class="text-gray-500">
-                    {{ formatPrice(item.product.price) }}
-                  </p>
-                  <p class="text-[11px] text-gray-400 mt-1">
-                    Order #{{ item.order.transaction_id }} ·
-                    {{ formatDateTime(item.order.transaction_date || item.order.created_at) }}
-                  </p>
-                </div>
-              </div>
 
-              <!-- kanan: form review -->
-              <div class="md:flex-1 space-y-2">
-                <!-- rating bintang -->
-                <div class="flex items-center gap-1 text-lg">
-                  <button
-                    v-for="star in stars"
-                    :key="star"
-                    type="button"
-                    @click="ratingDrafts[item.product.product_id] = star"
-                  >
-                    <span
-                      :class="[
-                        star <= (ratingDrafts[item.product.product_id] || 0)
-                          ? 'text-yellow-400'
-                          : 'text-gray-300'
-                      ]"
-                    >
-                      ★
+                <div class="flex-1 border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6">
+                  <div class="flex items-center gap-2 mb-3">
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wide">Rating</span>
+                    <div class="flex">
+                      <button
+                        v-for="star in stars"
+                        :key="star"
+                        type="button"
+                        @click="ratingDrafts[item.product.product_id] = star"
+                        class="p-1 focus:outline-none transition-transform active:scale-90 hover:scale-110"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6" :class="star <= (ratingDrafts[item.product.product_id] || 0) ? 'text-yellow-400' : 'text-gray-200'">
+                          <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clip-rule="evenodd" />
+                        </svg>
+                      </button>
+                    </div>
+                    <span v-if="ratingDrafts[item.product.product_id]" class="text-xs font-medium text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded ml-2">
+                      {{ ratingDrafts[item.product.product_id] }}/5
                     </span>
-                  </button>
-                  <span class="ml-2 text-[11px] text-gray-500">
-                    {{ ratingDrafts[item.product.product_id] || 0 }}/5
-                  </span>
-                </div>
+                    <span v-else class="text-[10px] text-gray-400 ml-2">(Opsional - AI Auto Detect)</span>
+                  </div>
 
-                <textarea
-                  v-model="drafts[item.product.product_id]"
-                  rows="3"
-                  class="w-full border rounded-md px-3 py-2 text-xs md:text-sm focus:outline-none focus:ring-1 focus:ring-gray-800"
-                  placeholder="Tuliskan pendapatmu tentang produk ini..."
-                />
-                <div class="flex justify-between items-center">
-                  <span class="text-[11px] text-gray-400">
-                    Minimal 5 karakter & pilih rating.
-                  </span>
-                  <button
-                    type="button"
-                    class="px-4 py-1.5 text-xs rounded-md bg-black text-white hover:bg-gray-900 disabled:opacity-50"
-                    :disabled="
-                      submitting ||
-                      !drafts[item.product.product_id] ||
-                      drafts[item.product.product_id].trim().length < 5
-                      // Syarat rating dihapus, jadi user bisa klik walau bintang masih kosong
-                    "
-                    @click="submitReview(item.product.product_id)"
-                  >
-                    {{ savingId === item.product.product_id && submitting
-                      ? 'Saving...'
-                      : 'Submit Review' }}
-                  </button>
+                  <textarea
+                    v-model="drafts[item.product.product_id]"
+                    rows="3"
+                    class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:bg-white focus:border-black focus:ring-1 focus:ring-black transition-all resize-none mb-3"
+                    placeholder="Ceritakan pengalaman Anda menggunakan produk ini..."
+                  ></textarea>
+
+                  <div class="flex items-center justify-between">
+                    <p class="text-xs text-gray-400 flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3 h-3"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                      Minimal 5 karakter.
+                    </p>
+                    <button
+                      type="button"
+                      @click="submitReview(item.product.product_id)"
+                      :disabled="submitting || !drafts[item.product.product_id] || drafts[item.product.product_id].trim().length < 5"
+                      class="bg-black text-white px-6 py-2.5 rounded-full text-xs font-bold hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow active:scale-95"
+                    >
+                      {{ savingId === item.product.product_id && submitting ? 'Mengirim...' : 'Kirim Ulasan' }}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <!-- Sudah direview -->
-        <div class="space-y-4">
-          <div class="flex items-center justify-between">
-            <h2 class="text-sm font-semibold">Review Saya</h2>
-            <span class="text-xs text-gray-400">
-              {{ reviewedList.length }} review
-            </span>
+        <section>
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold text-gray-900">Riwayat Ulasan</h2>
+            <span class="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-1 rounded-md">{{ reviewedList.length }}</span>
           </div>
 
-          <div
-            v-if="!reviewedList.length"
-            class="text-xs text-gray-500 border rounded-lg px-4 py-3 bg-gray-50"
-          >
-            Kamu belum menulis review apa pun.
+          <div v-if="!reviewedList.length" class="bg-white border border-dashed border-gray-300 rounded-2xl p-10 text-center">
+            <p class="text-gray-500 text-sm">Belum ada ulasan yang Anda berikan.</p>
           </div>
 
-          <div class="space-y-4">
+          <div v-else class="grid gap-4">
             <div
               v-for="rev in reviewedList"
               :key="rev.review_id"
-              class="border rounded-lg p-4 flex gap-3"
+              class="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col sm:flex-row gap-6 hover:border-gray-200 transition-colors"
             >
-              <div
-                class="w-14 h-14 rounded border bg-gray-50 overflow-hidden flex-shrink-0 flex items-center justify-center"
-              >
+              <div class="w-16 h-16 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center shrink-0">
                 <img
                   :src="productImage(rev.product)"
-                  alt=""
-                  class="w-full h-full object-cover"
+                  :alt="rev.product?.product_name"
+                  class="w-full h-full object-contain p-2 mix-blend-multiply"
                 />
               </div>
 
-              <div class="flex-1 text-xs md:text-sm space-y-1">
-                <div class="flex justify-between items-start gap-2">
-                  <div class="space-y-1">
-                    <p class="font-semibold">
-                      {{ rev.product?.product_name || 'Unknown Product' }}
-                    </p>
-
-                    <!-- rating tampilan -->
-                    <div class="flex items-center gap-1 text-yellow-400 text-sm">
-                      <span
-                        v-for="star in stars"
-                        :key="star"
-                      >
-                        {{ star <= (rev.rating || 0) ? '★' : '☆' }}
-                      </span>
-                      <span class="ml-1 text-[11px] text-gray-500 text-yellow-900">
-                        {{ rev.rating || 0 }}/5
-                      </span>
-                    </div>
-
-                    <p class="text-[11px] text-gray-400">
-                      {{ formatDateTime(rev.created_at) }}
-                    </p>
+              <div class="flex-1 min-w-0">
+                <div class="flex justify-between items-start mb-2">
+                  <div>
+                    <h3 class="font-bold text-gray-900 text-sm truncate pr-4">{{ rev.product?.product_name || 'Produk Tidak Dikenal' }}</h3>
+                    <p class="text-xs text-gray-400">{{ formatDateTime(rev.created_at) }}</p>
                   </div>
-
                   <button
-                    type="button"
-                    class="text-[11px] text-blue-600 hover:underline"
+                    v-if="editId !== rev.review_id"
                     @click="startEdit(rev)"
+                    class="text-xs font-bold text-black hover:underline"
                   >
                     Edit
                   </button>
                 </div>
 
-                <!-- mode edit -->
-                <div v-if="editId === rev.review_id" class="space-y-2 mt-1">
-                  <!-- rating edit -->
-                  <div class="flex items-center gap-1 text-lg">
+                <div v-if="editId === rev.review_id" class="mt-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                  <div class="flex items-center gap-1 mb-3">
                     <button
                       v-for="star in stars"
                       :key="star"
                       type="button"
                       @click="editRating = star"
+                      class="focus:outline-none"
                     >
-                      <span
-                        :class="[
-                          star <= (editRating || 0)
-                            ? 'text-yellow-400'
-                            : 'text-gray-300'
-                        ]"
-                      >
-                        ★
-                      </span>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 transition-colors" :class="star <= (editRating || 0) ? 'text-yellow-400' : 'text-gray-300'">
+                        <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clip-rule="evenodd" />
+                      </svg>
                     </button>
-                    <span class="ml-2 text-[11px] text-gray-500">
-                      {{ editRating || 0 }}/5
-                    </span>
+                    <span class="text-xs font-medium text-gray-500 ml-2">{{ editRating }}/5</span>
                   </div>
 
                   <textarea
                     v-model="editDraft"
                     rows="3"
-                    class="w-full border rounded-md px-3 py-2 text-xs md:text-sm focus:outline-none focus:ring-1 focus:ring-gray-800"
-                  />
-                  <div class="flex justify-end gap-2">
+                    class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-black focus:ring-1 focus:ring-black mb-3"
+                  ></textarea>
+
+                  <div class="flex justify-end gap-3">
                     <button
                       type="button"
-                      class="px-3 py-1.5 text-[11px] rounded-md border hover:bg-gray-50"
                       @click="cancelEdit"
+                      class="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
                     >
-                      Cancel
+                      Batal
                     </button>
                     <button
                       type="button"
-                      class="px-3 py-1.5 text-[11px] rounded-md bg-black text-white hover:bg-gray-900 disabled:opacity-50"
-                      :disabled="submitting || !editDraft.trim() || (editRating || 0) < 1"
                       @click="saveEdit"
+                      :disabled="submitting || !editDraft.trim()"
+                      class="px-4 py-2 text-xs font-bold text-white bg-black hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50"
                     >
-                      {{ submitting ? 'Saving...' : 'Save' }}
+                      {{ submitting ? 'Menyimpan...' : 'Simpan Perubahan' }}
                     </button>
                   </div>
                 </div>
 
-                <!-- mode view -->
-                <p
-                  v-else
-                  class="text-gray-700 whitespace-pre-line mt-1"
-                >
-                  {{ rev.review_text }}
-                </p>
+                <div v-else>
+                  <div class="flex items-center gap-1 mb-2">
+                    <svg v-for="star in stars" :key="star" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4" :class="star <= (rev.rating || 0) ? 'text-yellow-400' : 'text-gray-200'">
+                      <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clip-rule="evenodd" />
+                    </svg>
+                  </div>
+                  <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{{ rev.review_text }}</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+
+      </div>
     </main>
 
     <Footer />

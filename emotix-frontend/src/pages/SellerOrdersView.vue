@@ -91,117 +91,120 @@ onMounted(loadOrders)
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col bg-white">
+  <div class="min-h-screen flex flex-col bg-gray-50 font-sans text-gray-900">
     <Navbar />
 
-    <main class="flex-1 max-w-6xl mx-auto px-4 lg:px-0 py-10 space-y-8">
-      <!-- Header -->
-      <section class="space-y-1">
-        <h1 class="text-xl font-semibold">Seller Orders</h1>
-        <p class="text-sm text-gray-500">
-          Lihat semua pesanan yang masuk ke toko kamu, sayang 💚
-        </p>
+    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
+      
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight text-gray-900">
+            Seller Orders
+          </h1>
+          <p class="text-sm text-gray-500 mt-1">
+            Monitor and manage your incoming orders efficiently.
+          </p>
+        </div>
+        
+        <div class="hidden md:flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-gray-200 shadow-sm">
+           <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+           <span class="text-sm font-medium text-gray-700">Total Orders: <strong>{{ orders.length }}</strong></span>
+        </div>
+      </div>
+
+      <section v-if="loading" class="flex flex-col items-center justify-center py-20">
+        <div class="animate-spin rounded-full h-10 w-10 border-4 border-gray-200 border-t-black"></div>
+        <p class="mt-4 text-gray-500 text-sm font-medium">Loading your orders...</p>
       </section>
 
-      <!-- State: loading / error -->
-      <section v-if="loading" class="py-10 text-center text-gray-500 text-sm">
-        Loading orders...
+      <section v-else-if="error" class="py-20 text-center">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 mb-4">
+           <svg class="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        </div>
+        <h3 class="text-lg font-bold text-gray-900">Something went wrong</h3>
+        <p class="text-gray-500 mt-1">{{ error }}</p>
+        <button @click="loadOrders" class="mt-4 px-6 py-2 bg-black text-white rounded-full text-sm font-medium hover:bg-gray-800 transition-colors">Try Again</button>
       </section>
 
-      <section v-else-if="error" class="py-10 text-center text-red-500 text-sm">
-        {{ error }}
-      </section>
-
-      <!-- Main content -->
       <section
         v-else
         class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start"
       >
-        <!-- Left: Orders table -->
-        <div class="lg:col-span-2 border rounded-xl overflow-hidden">
-          <div class="px-4 py-3 border-b bg-gray-50 flex items-center justify-between">
-            <h2 class="text-sm font-semibold">All Orders</h2>
-            <span class="text-xs text-gray-500">
-              {{ orders.length }} order(s)
-            </span>
+        
+        <div class="lg:col-span-2 bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
+          <div class="px-6 py-5 border-b border-gray-100 bg-white flex justify-between items-center">
+            <h2 class="text-lg font-bold text-gray-900">Order List</h2>
+            <span class="md:hidden text-xs bg-gray-100 px-2 py-1 rounded-full text-gray-600 font-bold">{{ orders.length }}</span>
           </div>
 
-          <div class="overflow-x-auto">
-            <table class="min-w-full text-sm">
-              <thead class="bg-gray-50 border-b text-xs text-gray-500">
+          <div v-if="!orders.length" class="flex-1 flex flex-col items-center justify-center py-20 text-center">
+             <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+               <svg class="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+             </div>
+             <p class="text-gray-500 text-sm">No orders found.</p>
+          </div>
+
+          <div v-else class="overflow-x-auto">
+            <table class="min-w-full text-sm text-left">
+              <thead class="bg-gray-50/50 text-xs text-gray-400 font-bold uppercase tracking-wider">
                 <tr>
-                  <th class="px-4 py-3 text-left">Order ID</th>
-                  <th class="px-4 py-3 text-left">Customer</th>
-                  <th class="px-4 py-3 text-left">Amount</th>
-                  <th class="px-4 py-3 text-left">Date</th>
-                  <th class="px-4 py-3 text-left">Status</th>
-                  <th class="px-4 py-3 text-right">Actions</th>
+                  <th class="px-6 py-4">Order ID</th>
+                  <th class="px-6 py-4">Customer</th>
+                  <th class="px-6 py-4">Amount</th>
+                  <th class="px-6 py-4">Date</th>
+                  <th class="px-6 py-4">Status</th>
+                  <th class="px-6 py-4 text-right"></th>
                 </tr>
               </thead>
-              <tbody>
-                <tr
-                  v-if="!orders.length"
-                  class="text-center text-gray-500 text-xs"
-                >
-                  <td colspan="6" class="px-4 py-6">
-                    Belum ada order untuk ditampilkan.
-                  </td>
-                </tr>
-
+              <tbody class="divide-y divide-gray-100">
                 <tr
                   v-for="o in orders"
                   :key="o.transaction_id"
-                  class="border-b hover:bg-gray-50 cursor-pointer"
-                  :class="{
-                    'bg-gray-50/70':
-                      selectedOrder &&
-                      selectedOrder.transaction_id === o.transaction_id,
-                  }"
                   @click="selectOrder(o)"
+                  class="group transition-all cursor-pointer"
+                  :class="{
+                    'bg-blue-50/60 hover:bg-blue-50': selectedOrder && selectedOrder.transaction_id === o.transaction_id,
+                    'hover:bg-gray-50': !selectedOrder || selectedOrder.transaction_id !== o.transaction_id
+                  }"
                 >
-                  <td class="px-4 py-3 align-top">
-                    <div class="font-medium text-xs md:text-sm">
-                      #ORD-{{ o.transaction_id }}
+                  <td class="px-6 py-4 font-mono text-xs font-medium text-gray-500 group-hover:text-black transition-colors">
+                    #ORD-{{ o.transaction_id }}
+                  </td>
+
+                  <td class="px-6 py-4">
+                    <div class="flex flex-col">
+                      <span class="font-semibold text-gray-900">{{ o.buyer?.name || 'Guest' }}</span>
+                      <span class="text-xs text-gray-400">{{ o.buyer?.email || 'No email' }}</span>
                     </div>
                   </td>
 
-                  <td class="px-4 py-3 align-top">
-                    <div class="text-xs md:text-sm">
-                      {{ o.buyer?.name || '—' }}
-                    </div>
-                    <div class="text-[11px] text-gray-400">
-                      {{ o.buyer?.email || '' }}
-                    </div>
+                  <td class="px-6 py-4 font-medium text-gray-900">
+                    {{ formatPrice(o.total_price) }}
                   </td>
 
-                  <td class="px-4 py-3 align-top">
-                    <span class="text-xs md:text-sm">
-                      {{ formatPrice(o.total_price) }}
-                    </span>
+                  <td class="px-6 py-4 text-xs text-gray-500">
+                    {{ formatDateTime(o.transaction_date || o.created_at) }}
                   </td>
 
-                  <td class="px-4 py-3 align-top">
-                    <span class="text-xs md:text-sm text-gray-500">
-                      {{ formatDateTime(o.transaction_date || o.created_at) }}
-                    </span>
-                  </td>
-
-                  <td class="px-4 py-3 align-top">
+                  <td class="px-6 py-4">
                     <span
-                      class="inline-flex items-center px-2 py-1 rounded-full text-[11px] md:text-xs"
+                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border capitalize"
                       :class="statusBadgeClass(o.status)"
                     >
+                      <span class="w-1.5 h-1.5 rounded-full mr-2"
+                        :class="{
+                           'bg-current opacity-60': true
+                        }"
+                      ></span>
                       {{ o.status }}
                     </span>
                   </td>
 
-                  <td class="px-4 py-3 align-top text-right">
-                    <button
-                      type="button"
-                      class="px-3 py-1.5 text-xs rounded-md border bg-white hover:bg-gray-50"
-                      @click.stop="selectOrder(o)"
-                    >
-                      View
+                  <td class="px-6 py-4 text-right">
+                    <button class="w-8 h-8 rounded-full flex items-center justify-center border border-gray-200 text-gray-400 group-hover:border-black group-hover:text-black group-hover:bg-white transition-all shadow-sm">
+                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+                          <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
+                        </svg>
                     </button>
                   </td>
                 </tr>
@@ -210,109 +213,106 @@ onMounted(loadOrders)
           </div>
         </div>
 
-        <!-- Right: Detail panel -->
-        <div class="border rounded-xl p-5 space-y-5">
-          <h2 class="text-sm font-semibold mb-1">Order Details</h2>
-
-          <div v-if="!selectedOrder" class="text-xs text-gray-500">
-            Pilih salah satu order di tabel untuk melihat detailnya.
-          </div>
-
-          <div v-else class="space-y-4 text-xs md:text-sm">
-            <!-- top info -->
-            <div class="space-y-1">
-              <div class="flex justify-between">
-                <span class="text-gray-500">Order ID</span>
-                <span class="font-mono text-xs md:text-sm">
-                  #ORD-{{ selectedOrder.transaction_id }}
-                </span>
+        <div class="lg:col-span-1 sticky top-28">
+           
+           <div v-if="!selectedOrder" class="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 text-center h-[500px] flex flex-col items-center justify-center">
+              <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6 text-gray-300">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                 </svg>
               </div>
-              <div class="flex justify-between">
-                <span class="text-gray-500">Date</span>
-                <span>
-                  {{
-                    formatDateTime(
-                      selectedOrder.transaction_date ||
-                        selectedOrder.created_at
-                    )
-                  }}
-                </span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-500">Customer</span>
-                <span>
-                  {{ selectedOrder.buyer?.name || '—' }}
-                </span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-500">Status</span>
-                <span
-                  class="inline-flex items-center px-2 py-1 rounded-full text-[11px]"
-                  :class="statusBadgeClass(selectedOrder.status)"
-                >
-                  {{ selectedOrder.status }}
-                </span>
-              </div>
-            </div>
+              <h3 class="text-gray-900 font-bold mb-2">Order Details</h3>
+              <p class="text-gray-500 text-sm">Select an order from the list to view full details.</p>
+           </div>
 
-            <!-- items -->
-            <div class="border-t pt-3 space-y-2">
-              <p class="text-xs font-semibold text-gray-700 mb-1">
-                Items ({{ totalItems }})
-              </p>
-
-              <div
-                v-for="d in selectedOrder.details || []"
-                :key="d.detail_id || d.item_id"
-                class="flex items-center justify-between gap-3 py-2"
-              >
-                <div class="flex items-center gap-3">
-                  <div
-                    class="w-10 h-10 rounded border bg-gray-50 overflow-hidden flex items-center justify-center"
-                  >
-                    <img
-                      :src="productImage(d.product)"
-                      alt=""
-                      class="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div>
-                    <p class="text-xs md:text-sm font-medium">
-                      {{ d.product?.product_name || 'Unknown Product' }}
-                    </p>
-                    <p class="text-[11px] text-gray-400">
-                      Qty: {{ d.quantity }} ×
-                      {{ formatPrice(d.product?.price || d.price || 0) }}
-                    </p>
-                  </div>
-                </div>
-                <div class="text-xs md:text-sm font-medium">
-                  {{ formatPrice(d.subtotal || (d.quantity * (d.product?.price || d.price || 0))) }}
-                </div>
+           <div v-else class="bg-white rounded-3xl border border-gray-100 shadow-lg overflow-hidden flex flex-col">
+              
+              <div class="px-6 py-5 bg-gray-50/50 border-b border-gray-100">
+                 <div class="flex justify-between items-start mb-2">
+                    <h3 class="font-bold text-gray-900">Order Details</h3>
+                    <span class="font-mono text-xs text-gray-500 bg-white px-2 py-1 rounded border">#ORD-{{ selectedOrder.transaction_id }}</span>
+                 </div>
+                 <div class="flex items-center gap-2 text-xs text-gray-500">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                    {{ formatDateTime(selectedOrder.transaction_date || selectedOrder.created_at) }}
+                 </div>
               </div>
 
-              <div v-if="!(selectedOrder.details || []).length" class="text-xs text-gray-400">
-                Tidak ada item detail pada order ini.
+              <div class="px-6 py-4 border-b border-gray-50 flex items-center gap-4">
+                 <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                 </div>
+                 <div>
+                    <p class="text-sm font-bold text-gray-900">{{ selectedOrder.buyer?.name || 'Guest Customer' }}</p>
+                    <p class="text-xs text-gray-500">{{ selectedOrder.buyer?.email || 'No contact info' }}</p>
+                 </div>
               </div>
-            </div>
 
-            <!-- summary -->
-            <div class="border-t pt-3 space-y-1 text-xs md:text-sm">
-              <div class="flex justify-between">
-                <span class="text-gray-500">Subtotal</span>
-                <span>{{ formatPrice(selectedOrder.total_price) }}</span>
+              <div class="px-6 py-4 bg-white flex-1 overflow-y-auto max-h-[350px]">
+                 <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Items ({{ totalItems }})</h4>
+                 
+                 <div class="space-y-4">
+                    <div
+                      v-for="d in selectedOrder.details || []"
+                      :key="d.detail_id || d.item_id"
+                      class="flex gap-3"
+                    >
+                       <div class="w-14 h-14 rounded-lg bg-gray-50 border border-gray-100 p-1 flex-shrink-0">
+                          <img
+                             :src="productImage(d.product)"
+                             alt="Product"
+                             class="w-full h-full object-contain mix-blend-multiply"
+                          />
+                       </div>
+                       
+                       <div class="flex-1 min-w-0">
+                          <p class="text-sm font-semibold text-gray-900 line-clamp-1">
+                             {{ d.product?.product_name || 'Unknown Product' }}
+                          </p>
+                          <div class="flex justify-between items-center mt-1">
+                             <p class="text-xs text-gray-500">
+                                {{ d.quantity }} x {{ formatPrice(d.product?.price || d.price || 0) }}
+                             </p>
+                             <p class="text-sm font-medium text-gray-900">
+                                {{ formatPrice(d.subtotal || (d.quantity * (d.product?.price || d.price || 0))) }}
+                             </p>
+                          </div>
+                       </div>
+                    </div>
+
+                    <div v-if="!(selectedOrder.details || []).length" class="text-center py-4 text-xs text-gray-400 italic">
+                      No items found in this order.
+                    </div>
+                 </div>
               </div>
-              <div class="flex justify-between">
-                <span class="text-gray-500">Shipping</span>
-                <span>Free</span>
+
+              <div class="px-6 py-5 bg-gray-50 border-t border-gray-100 space-y-2">
+                 <div class="flex justify-between text-sm text-gray-500">
+                    <span>Subtotal</span>
+                    <span>{{ formatPrice(selectedOrder.total_price) }}</span>
+                 </div>
+                 <div class="flex justify-between text-sm text-gray-500">
+                    <span>Shipping</span>
+                    <span class="text-green-600 font-medium">Free</span>
+                 </div>
+                 <div class="border-t border-gray-200 my-2"></div>
+                 <div class="flex justify-between items-center">
+                    <span class="text-sm font-bold text-gray-900">Total</span>
+                    <span class="text-lg font-extrabold text-gray-900">{{ formatPrice(selectedOrder.total_price) }}</span>
+                 </div>
+                 
+                 <div class="pt-4">
+                    <div class="w-full py-2.5 rounded-xl text-center text-xs font-bold border uppercase tracking-wider"
+                      :class="statusBadgeClass(selectedOrder.status)"
+                    >
+                       {{ selectedOrder.status }}
+                    </div>
+                 </div>
               </div>
-              <div class="flex justify-between font-semibold">
-                <span>Total</span>
-                <span>{{ formatPrice(selectedOrder.total_price) }}</span>
-              </div>
-            </div>
-          </div>
+
+           </div>
         </div>
+
       </section>
     </main>
 

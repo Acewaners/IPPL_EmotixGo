@@ -22,7 +22,8 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::put('/products/{product}',[ProductController::class,'update']);     // ✅ ganti PUT
     Route::patch('/products/{product}',[ProductController::class,'update']);   // ✅ optional
     Route::delete('/products/{product}',[ProductController::class,'destroy']); // ✅ DELETE
-   Route::get('/products/{product}/reviews', [ProductController::class, 'reviews']);
+    Route::get('/products/{product}/reviews', [ProductController::class, 'reviews']);
+    Route::post('/contact', [App\Http\Controllers\Api\ContactController::class, 'store']);
 
     Route::post('/transactions',[TransactionController::class,'create']);
     Route::get('/buyer/orders',[TransactionController::class,'indexBuyer']);
