@@ -29,6 +29,8 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::get('/me',[AuthController::class,'me']);
     Route::post('/logout',[AuthController::class,'logout']);
 
+    Route::put('/user/update-profile', [AuthController::class, 'updateProfile']);
+    Route::put('/user/update-password', [AuthController::class, 'updatePassword']);
     Route::post('/products',[ProductController::class,'store']);
     Route::put('/products/{product}',[ProductController::class,'update']);     // ✅ ganti PUT
     Route::patch('/products/{product}',[ProductController::class,'update']);   // ✅ optional

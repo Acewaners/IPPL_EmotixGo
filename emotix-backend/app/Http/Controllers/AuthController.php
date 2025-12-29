@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -40,5 +41,44 @@ class AuthController extends Controller
     public function logout(Request $req){
         $req->user()->currentAccessToken()->delete();
         return response()->json(['message'=>'Logged out']);
+    }
+
+    public function updateProfile(Request $request) {
+        $user = $request->user();
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,'.$user->id,
+        ]);
+        $user->update($validated);
+        return response()->json(['message' => 'Profile updated', 'user' => $user]);
+    }
+
+    public function updatePassword(Request $request) {
+        // Pastikan user diambil dari Auth::user() atau $request->user()
+        $user = auth('sanctum')->user(); 
+
+        if (!$user) {
+            Log::error('Update Password Failed: User not found in session.');
+            return response()->json(['message' => 'User not found.'], 401);
+        }
+
+        $request->validate([
+            'current_password' => 'required',
+            'new_password' => 'required|min:8|confirmed',
+        ]);
+
+        // Lakukan pengecekan manual agar debug lebih jelas
+        if (!Hash::check($request->current_password, $user->password)) {
+            Log::error('Password Mismatch for User:', ['id' => $user->id, 'email' => $user->email]);
+            return response()->json([
+                'message' => 'The password is incorrect.',
+                'errors' => ['current_password' => ['Password lama yang Anda masukkan salah.']]
+            ], 422);
+        }
+
+        $user->update(['password' => Hash::make($request->new_password)]);
+        
+        Log::info('Password Update Success for User ID: ' . $user->id);
+        return response()->json(['message' => 'Password changed successfully']);
     }
 }

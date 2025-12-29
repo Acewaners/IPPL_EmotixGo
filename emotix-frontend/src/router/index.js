@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuth } from '../stores/auth'
+import AccountView from '../pages/AccountView.vue'
 
 const Login = () => import('../pages/Login.vue')
 const Register = () => import('../pages/Register.vue')
@@ -38,6 +39,12 @@ const router = createRouter({
       name: 'payment-success', 
       component: SuccessView, 
       meta: { auth: true } 
+    },
+    {
+      path: '/account',
+      name: 'account',
+      component: AccountView,
+      meta: { requiresAuth: true } // Pastikan hanya bisa diakses jika sudah login
     },
     { 
       path: '/products', 

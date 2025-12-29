@@ -60,21 +60,19 @@ const goToSellerOrders = () => {
 const goToAccountPage = () => {
   if (!auth.token) return r.push('/login')
   r.push('/account'); closeAccountMenu()
-}
-const goToBuyerReviews = () => {
-  if (!auth.token) return r.push('/login')
-  r.push('/my-reviews'); closeAccountMenu()
+  closeMobileMenu() // TAMBAHKAN BARIS INI
 }
 const handleLogout = async () => {
   try { await auth.logout(); r.push('/login') } 
   catch (e) { console.error(e) } 
   finally { closeAccountMenu() }
 }
-const handleAccountMobile = () => {
+
+const goToBuyerReviews = () => {
   if (!auth.token) return r.push('/login')
-  if (role.value === 'seller') return r.push('/seller/products')
-  if (role.value === 'buyer') return r.push('/buyer/orders')
-  return r.push('/account')
+  r.push('/my-reviews')
+  closeAccountMenu() // Untuk desktop
+  closeMobileMenu()  // TAMBAHKAN INI agar menu HP tertutup otomatis
 }
 </script>
 
@@ -146,8 +144,11 @@ const handleAccountMobile = () => {
                     <p class="text-sm font-bold text-gray-900 truncate">{{ auth.user?.email || 'User' }}</p>
                   </div>
 
+                  <button @click="goToAccountPage" class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors text-left">
+                    <UserIcon class="w-4 h-4" /> Manage Account
+                  </button>
+
                   <template v-if="role === 'buyer'">
-                    <button @click="goToAccountPage" class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors text-left"><UserIcon class="w-4 h-4" /> Manage Account</button>
                     <button @click="goToBuyerOrders" class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors text-left"><ClipboardDocumentListIcon class="w-4 h-4" /> My Orders</button>
                     <button @click="goToBuyerReviews" class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors text-left"><StarIcon class="w-4 h-4" /> My Reviews</button>
                   </template>
@@ -155,10 +156,6 @@ const handleAccountMobile = () => {
                   <template v-else-if="role === 'seller'">
                     <button @click="goToSellerDashboard" class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors text-left"><Squares2X2Icon class="w-4 h-4" /> Seller Dashboard</button>
                     <button @click="goToSellerOrders" class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors text-left"><ClipboardDocumentListIcon class="w-4 h-4" /> Seller Orders</button>
-                  </template>
-
-                  <template v-else>
-                    <button @click="goToAccountPage" class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors text-left"><UserIcon class="w-4 h-4" /> My Account</button>
                   </template>
 
                   <div class="border-t border-gray-100 my-1"></div>
@@ -192,9 +189,32 @@ const handleAccountMobile = () => {
           <RouterLink to="/register" @click="closeMobileMenu" class="px-4 py-3 rounded-xl text-sm font-semibold text-black bg-gray-100">Sign Up</RouterLink>
         </template>
         <template v-else>
-            <button @click="handleAccountMobile" class="px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 flex justify-between items-center w-full">
-              <span>My Account</span>
-              <span class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-500 uppercase">{{ role }}</span>
+            <template v-if="role === 'buyer'">
+              <button @click="goToBuyerOrders" class="px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-3 w-full text-left">
+                <ClipboardDocumentListIcon class="w-5 h-5 text-gray-400" />
+                <span>My Orders</span>
+              </button>
+              <button @click="goToBuyerReviews" class="px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-3 w-full text-left">
+                <StarIcon class="w-5 h-5 text-gray-400" />
+                <span>My Reviews</span>
+              </button>
+            </template>
+
+            <template v-else-if="role === 'seller'">
+              <button @click="goToSellerDashboard" class="px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-3 w-full text-left">
+                <Squares2X2Icon class="w-5 h-5 text-gray-400" />
+                <span>Seller Dashboard</span>
+              </button>
+            </template>
+
+            <div class="border-t border-gray-100 my-1"></div>
+            
+            <button @click="goToAccountPage" class="px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 flex justify-between items-center w-full">
+              <div class="flex items-center gap-3">
+                <UserIcon class="w-5 h-5 text-gray-400" />
+                <span>Manage Account</span>
+              </div>
+              <span class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-500 uppercase font-bold">{{ role }}</span>
             </button>
             <button @click="handleLogout" class="px-4 py-3 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 w-full text-left">Log Out</button>
         </template>
