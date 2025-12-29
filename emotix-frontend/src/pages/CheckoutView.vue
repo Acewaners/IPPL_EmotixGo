@@ -248,26 +248,28 @@ const placeOrder = async () => {
         </div>
 
         <div class="lg:col-span-5">
-          <div class="bg-white p-8 rounded-3xl border border-gray-100 shadow-xl shadow-gray-100/50 sticky top-28">
-            <h2 class="text-xl font-bold text-gray-900 mb-6">Order Summary</h2>
+          <div class="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-xl shadow-gray-100/50 sticky top-28 overflow-hidden">
+            <h2 class="text-xl font-bold text-gray-900 mb-6 truncate">Order Summary</h2>
 
             <div class="space-y-4 mb-6 max-h-80 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-200">
               <div
                 v-for="item in items"
                 :key="item.product.product_id"
-                class="flex items-center justify-between gap-4 group"
+                class="flex items-start justify-between gap-4 group"
               >
-                <div class="flex items-center gap-4">
-                  <div class="relative w-14 h-14 rounded-lg bg-gray-50 border border-gray-100 p-1 flex-shrink-0">
+                <div class="flex items-center gap-4 min-w-0"> <div class="relative w-14 h-14 rounded-lg bg-gray-50 border border-gray-100 p-1 flex-shrink-0">
                     <img
                       :src="productImage(item.product)"
                       :alt="item.product.product_name"
                       class="w-full h-full object-contain mix-blend-multiply"
                     />
                   </div>
-                  <span class="text-sm font-medium text-gray-700 group-hover:text-black transition-colors line-clamp-2">
-                    {{ item.product.product_name }}
-                  </span>
+                  <div class="flex flex-col min-w-0">
+                    <span class="text-sm font-medium text-gray-700 group-hover:text-black transition-colors line-clamp-2 break-words">
+                      {{ item.product.product_name }}
+                    </span>
+                    <span class="text-xs text-gray-400">Qty: {{ item.quantity }}</span>
+                  </div>
                 </div>
                 <span class="text-sm font-semibold text-gray-900 whitespace-nowrap">
                   {{ formatPrice(item.product.price * item.quantity) }}
@@ -276,29 +278,29 @@ const placeOrder = async () => {
             </div>
 
             <div class="space-y-3 pt-6 border-t border-gray-100 text-sm">
-              <div class="flex justify-between text-gray-500">
-                <span>Subtotal</span>
-                <span class="font-medium text-gray-900">{{ formatPrice(subtotal) }}</span>
+              <div class="flex justify-between items-center gap-2">
+                <span class="text-gray-500 truncate">Subtotal</span>
+                <span class="font-medium text-gray-900 whitespace-nowrap">{{ formatPrice(subtotal) }}</span>
               </div>
-              <div class="flex justify-between text-gray-500">
-                <span>Shipping</span>
-                <span class="font-medium text-green-600">Free</span>
+              <div class="flex justify-between items-center gap-2">
+                <span class="text-gray-500 truncate">Shipping</span>
+                <span class="font-medium text-green-600 whitespace-nowrap">Free</span>
               </div>
               <div class="border-t border-gray-100 my-2"></div>
-              <div class="flex justify-between items-center">
-                <span class="text-base font-bold text-gray-900">Total</span>
-                <span class="text-xl font-extrabold text-gray-900">{{ formatPrice(total) }}</span>
+              <div class="flex justify-between items-center gap-2">
+                <span class="text-base font-bold text-gray-900 truncate">Total</span>
+                <span class="text-xl font-extrabold text-gray-900 whitespace-nowrap">{{ formatPrice(total) }}</span>
               </div>
             </div>
 
             <div class="mt-8 space-y-4">
-              <h3 class="text-sm font-bold text-gray-900">Payment Method</h3>
+              <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider text-[11px] text-gray-400">Payment Method</h3>
               <label 
-                class="flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all"
+                class="flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all gap-2"
                 :class="billing.paymentMethod === 'qris' ? 'border-black bg-gray-50' : 'border-gray-200 hover:border-gray-300'"
               >
-                <div class="flex items-center gap-3">
-                  <div class="relative flex items-center">
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="relative flex items-center flex-shrink-0">
                     <input
                       v-model="billing.paymentMethod"
                       type="radio"
@@ -307,11 +309,9 @@ const placeOrder = async () => {
                     />
                     <div class="pointer-events-none absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white opacity-0 peer-checked:opacity-100"></div>
                   </div>
-                  <span class="text-sm font-medium">QRIS / E-Wallet</span>
+                  <span class="text-sm font-medium truncate">QRIS / E-Wallet</span>
                 </div>
-                <div class="flex gap-1 opacity-60">
-                   <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png" class="h-4 object-contain" alt="QRIS" />
-                </div>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png" class="h-4 w-auto object-contain flex-shrink-0 opacity-80" alt="QRIS" />
               </label>
             </div>
 
@@ -321,12 +321,12 @@ const placeOrder = async () => {
                   v-model="billing.coupon"
                   type="text"
                   placeholder="Coupon Code"
-                  class="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
+                  class="min-w-0 flex-1 bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
                 />
                 <button
                   type="button"
                   @click="applyCoupon"
-                  class="px-5 py-3 bg-gray-900 text-white text-sm font-bold rounded-xl hover:bg-black transition-colors"
+                  class="flex-shrink-0 px-5 py-3 bg-gray-900 text-white text-sm font-bold rounded-xl hover:bg-black transition-colors"
                 >
                   Apply
                 </button>
@@ -340,7 +340,7 @@ const placeOrder = async () => {
               class="w-full mt-6 bg-red-600 text-white text-sm font-bold py-4 rounded-xl hover:bg-red-700 disabled:opacity-70 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2"
             >
               <span v-if="placing" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-              <span>{{ placing ? 'Processing...' : 'Place Order' }}</span>
+              <span class="truncate">{{ placing ? 'Processing...' : 'Place Order' }}</span>
             </button>
             
           </div>
