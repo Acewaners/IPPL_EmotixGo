@@ -52,43 +52,50 @@ class TransactionController extends Controller
             ->with('details.product')->latest('transaction_date')->paginate(10);
     }
 
-    public function updateStatus(Request $r, $id) // Gunakan $id mentah agar tidak bentrok dengan primary key
+    public function updateStatus(Request $r, $id)
     {
+        // 1. Cari transaksi secara manual (lebih aman dari error binding)
         $transaction = Transaction::findOrFail($id);
 
+        // 2. Validasi Status (Sesuaikan dengan frontend Anda)
+        // Tambahkan 'cancelled' jika frontend mengirim status itu
         $r->validate([
-            // Tambahkan 'cancelled' jika frontend menggunakannya
-            'status' => 'required|in:pending_payment,processing,shipped,completed,failed,cancelled',
+            'status'          => 'required|in:pending_payment,processing,shipped,completed,failed,cancelled',
             'tracking_number' => 'nullable|max:100',
         ]);
 
         $user = $r->user();
-        $userId = $user->user_id;
+        $userId = $user->user_id; // Pastikan primary key user Anda 'user_id'
+
+        // 3. Cek Kepemilikan & Role
         $isSeller = $userId === $transaction->seller_id;
         $isBuyer  = $userId === $transaction->buyer_id;
-        $isAdmin  = $user->role === 'admin' || ($user->is_admin ?? false);
+        // Cek apakah user adalah admin (sesuai kolom di database Anda, misal 'role' atau 'is_admin')
+        $isAdmin  = ($user->role === 'admin') || ($user->is_admin == 1); 
 
-        // Izinkan Seller, Buyer, atau Admin
-        abort_unless($isSeller || $isBuyer || $isAdmin, 403, 'Not allowed.');
+        // 4. Logika Izin: Izinkan jika Seller, Buyer, ATAU Admin
+        abort_unless($isSeller || $isBuyer || $isAdmin, 403, 'Not allowed. You are not the owner of this order.');
 
         $oldStatus = $transaction->status;
 
+        // 5. Logika Update
         if ($isBuyer && !$isAdmin) {
-            // Buyer hanya boleh mengubah status menjadi 'completed' (Konfirmasi Terima Barang)
+            // Buyer hanya boleh konfirmasi selesai
             if ($r->input('status') !== 'completed') {
                 abort(403, 'Buyer can only mark order as completed.');
             }
             $transaction->update(['status' => 'completed']);
         } else {
-            // Seller atau Admin bisa mengubah semua
+            // Seller atau Admin bebas ubah status apa saja
             $transaction->update($r->only('status', 'tracking_number'));
         }
 
-        // Logika nambah SOLD
+        // 6. Logika Tambah "Sold" (Terjual)
         if ($oldStatus !== 'completed' && $transaction->status === 'completed') {
             $transaction->loadMissing('details.product');
             foreach ($transaction->details as $detail) {
                 if ($detail->product) {
+                    // Pastikan kolom 'sold' ada di tabel products
                     $detail->product->increment('sold', $detail->quantity);
                 }
             }
@@ -96,7 +103,7 @@ class TransactionController extends Controller
 
         return $transaction->load(['details.product', 'buyer']);
     }
-    
+
     public function show(Request $r, Transaction $transaction)
     {
         // buyer ATAU seller boleh lihat

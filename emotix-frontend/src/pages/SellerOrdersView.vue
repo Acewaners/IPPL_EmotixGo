@@ -205,7 +205,21 @@ onMounted(loadOrders)
                     {{ formatDateTime(o.transaction_date || o.created_at) }}
                   </td>
 
-                  
+                  <td class="px-6 py-4" @click.stop> 
+                    <select
+                      :value="o.status" 
+                      @change="updateStatus(o, $event.target.value)"
+                      :disabled="loadingStatus === o.transaction_id"
+                      class="block w-full rounded-md border-0 py-1 px-2 text-xs font-bold ring-1 ring-inset focus:ring-2 cursor-pointer transition-all"
+                      :class="statusBadgeClass(o.status)"
+                    >
+                      <option value="pending_payment">Pending Payment</option>
+                      <option value="processing">Processing</option>
+                      <option value="shipped">Shipped</option>
+                      <option value="completed">Completed</option>
+                      <option value="failed">Failed / Cancelled</option>
+                    </select>
+                  </td>
 
                   <td class="px-6 py-4 text-right">
                     <button class="w-8 h-8 rounded-full flex items-center justify-center border border-gray-200 text-gray-400 group-hover:border-black group-hover:text-black group-hover:bg-white transition-all shadow-sm">
@@ -318,13 +332,15 @@ onMounted(loadOrders)
                       :class="statusBadgeClass(selectedOrder.status)"
                     >
                       <option value="pending_payment">Pending Payment</option>
+                      
                       <option value="processing">Processing</option>
                       <option value="shipped">Shipped</option>
-                      <option value="completed">Completed</option>  
-                      <option value="failed">Cancelled / Failed</option>
+                      <option value="completed">Completed</option>
+                      
+                      <option value="failed">Failed / Cancelled</option>
                     </select>
                     <p v-if="loadingStatus === selectedOrder.transaction_id" class="text-[10px] text-center mt-1 animate-pulse">Updating...</p>
-                  </div>
+                </div>
               </div>
 
            </div>
