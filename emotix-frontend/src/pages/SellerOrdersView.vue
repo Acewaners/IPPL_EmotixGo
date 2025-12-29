@@ -54,6 +54,25 @@ const statusBadgeClass = (status) => {
   }
 }
 
+const loadingStatus = ref(null)
+
+async function updateStatus(order, newStatus) {
+  const oldStatus = order.status
+  loadingStatus.value = order.transaction_id
+  
+  try {
+    await api.put(`/seller/orders/${order.transaction_id}/status`, {
+      status: newStatus
+    })
+    order.status = newStatus // Update di layar jika sukses
+  } catch (e) {
+    order.status = oldStatus // Kembalikan jika gagal
+    alert(e.response?.data?.message || 'Gagal mengubah status')
+  } finally {
+    loadingStatus.value = null
+  }
+}
+
 const loadOrders = async () => {
   loading.value = true
   error.value = ''
@@ -186,18 +205,19 @@ onMounted(loadOrders)
                     {{ formatDateTime(o.transaction_date || o.created_at) }}
                   </td>
 
-                  <td class="px-6 py-4">
-                    <span
-                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border capitalize"
+                  <td class="px-6 py-4" @click.stop> <select
+                      :value="o.status"
+                      @change="updateStatus(o, $event.target.value)"
+                      :disabled="loadingStatus === o.transaction_id"
+                      class="block w-full rounded-md border-0 py-1 px-2 text-xs font-bold ring-1 ring-inset focus:ring-2 cursor-pointer transition-all"
                       :class="statusBadgeClass(o.status)"
                     >
-                      <span class="w-1.5 h-1.5 rounded-full mr-2"
-                        :class="{
-                           'bg-current opacity-60': true
-                        }"
-                      ></span>
-                      {{ o.status }}
-                    </span>
+                      <option value="pending">Pending</option>
+                      <option value="processing">Processing</option>
+                      <option value="shipped">Shipped</option>
+                      <option value="completed">Completed</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
                   </td>
 
                   <td class="px-6 py-4 text-right">
@@ -302,12 +322,22 @@ onMounted(loadOrders)
                  </div>
                  
                  <div class="pt-4">
-                    <div class="w-full py-2.5 rounded-xl text-center text-xs font-bold border uppercase tracking-wider"
+                    <label class="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Update Order Status</label>
+                    <select
+                      :value="selectedOrder.status"
+                      @change="updateStatus(selectedOrder, $event.target.value)"
+                      :disabled="loadingStatus === selectedOrder.transaction_id"
+                      class="w-full py-2.5 rounded-xl text-center text-xs font-bold border uppercase tracking-wider cursor-pointer"
                       :class="statusBadgeClass(selectedOrder.status)"
                     >
-                       {{ selectedOrder.status }}
-                    </div>
-                 </div>
+                      <option value="pending">Pending</option>
+                      <option value="processing">Processing</option>
+                      <option value="shipped">Shipped</option>
+                      <option value="completed">Completed</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                    <p v-if="loadingStatus === selectedOrder.transaction_id" class="text-[10px] text-center mt-1 animate-pulse">Updating...</p>
+                  </div>
               </div>
 
            </div>

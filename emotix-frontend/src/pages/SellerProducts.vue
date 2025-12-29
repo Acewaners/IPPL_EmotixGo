@@ -21,15 +21,32 @@ const openCreate = ref(false)
 const openEdit = ref(false)
 const editing = ref(null)
 
-const STORAGE_BASE =
-  import.meta.env?.VITE_STORAGE_BASE ?? 'http://localhost:8000/storage'
-const imgSrc = (path) => (path ? `${STORAGE_BASE}/${path}` : '')
+const STORAGE_BASE = import.meta.env.VITE_STORAGE_BASE || 'http://localhost:8000/storage'
+const imgSrc = (path) => {
+  if (!path) return '/dummy-qr.png' // Gambar default jika kosong
+  if (path.startsWith('http')) return path // Jika URL lengkap (Cloudinary), pakai langsung
+  return `${STORAGE_BASE}/${path}` // Jika path lokal, tambahkan base URL
+}
 
 onMounted(async () => {
   if (!auth.token) return r.push('/login')
   if (auth.user?.role !== 'seller') return r.push('/buyer/orders')
   await Promise.all([loadCategories(), loadProducts(), loadSellerOrders()])
 })
+
+const getProductImage = (imagePath) => {
+  if (!imagePath) {
+    return '/dummy-qr.png' // Gambar default jika kosong
+  }
+  
+  // Jika gambar sudah berupa link lengkap (Cloudinary/External), langsung pakai
+  if (imagePath.startsWith('http')) {
+    return imagePath
+  }
+  
+  // Jika gambar lokal (upload manual tanpa cloud), tambahkan prefix storage
+  return `${STORAGE_BASE}/${imagePath}`
+}
 
 async function loadCategories() {
   try {

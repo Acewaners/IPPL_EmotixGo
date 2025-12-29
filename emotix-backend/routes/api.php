@@ -25,6 +25,7 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::get('/products/{product}/reviews', [ProductController::class, 'reviews']);
     Route::post('/contact', [App\Http\Controllers\Api\ContactController::class, 'store']);
 
+    Route::put('/seller/orders/{id}/status', [TransactionController::class, 'updateStatus']);
     Route::post('/transactions',[TransactionController::class,'create']);
     Route::get('/buyer/orders',[TransactionController::class,'indexBuyer']);
     Route::get('/seller/orders',[TransactionController::class,'indexSeller']);

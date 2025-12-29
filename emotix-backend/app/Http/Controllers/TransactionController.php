@@ -52,57 +52,61 @@ class TransactionController extends Controller
             ->with('details.product')->latest('transaction_date')->paginate(10);
     }
 
-    public function updateStatus(Request $r, Transaction $transaction)
+    public function updateStatus(Request $r, $id)
     {
+        $transaction = Transaction::findOrFail($id);
+
+        // 1. Validasi Status (SESUAIKAN DENGAN FRONTEND)
         $r->validate([
-            'status'          => 'required|in:pending_payment,processing,shipped,completed,failed',
+            // Kita pakai: pending, processing, shipped, completed, cancelled
+            'status'          => 'required|in:pending,processing,shipped,completed,cancelled',
             'tracking_number' => 'nullable|max:100',
         ]);
 
-        $userId  = $r->user()->user_id ?? null;
+        $userId   = $r->user()->user_id ?? null;
         $isSeller = $userId === $transaction->seller_id;
         $isBuyer  = $userId === $transaction->buyer_id;
 
-        // ❗ hanya buyer atau seller yg boleh ubah
+        // 2. Cek Hak Akses
         abort_unless($isSeller || $isBuyer, 403, 'Not allowed.');
 
-        // simpan status lama buat cek perubahan
         $oldStatus = $transaction->status;
 
+        // 3. Logika Khusus Buyer (Opsional: Misal buyer konfirmasi terima barang)
         if ($isBuyer) {
-            // buyer cuma boleh rubah dari pending_payment -> completed
-            if (
-                $oldStatus !== 'pending_payment' ||
-                $r->input('status') !== 'completed'
-            ) {
-                abort(403, 'Buyer cannot change this status.');
+            // Buyer hanya boleh ubah jadi 'completed' (konfirmasi terima)
+            if ($r->input('status') !== 'completed') {
+                abort(403, 'Buyer can only mark order as completed.');
             }
-
-            // buyer tidak boleh ubah tracking_number
-            $transaction->update([
-                'status' => 'completed',
-            ]);
-
-        } else {
-            // seller: bebas ubah status & tracking_number
+            $transaction->update(['status' => 'completed']);
+        } 
+        // 4. Logika Seller (Bebas ubah apa saja)
+        else {
             $transaction->update($r->only('status', 'tracking_number'));
         }
 
-        // ⭐ DI SINI logika nambah SOLD per produk
+        // ⭐ 5. FITUR PENTING: Tambah Counter 'Sold' di Produk
+        // Hanya jalan jika status berubah menjadi 'completed'
         if ($oldStatus !== 'completed' && $transaction->status === 'completed') {
-            // pastikan relasi ke details & product sudah dimuat
             $transaction->loadMissing('details.product');
 
             foreach ($transaction->details as $detail) {
                 if ($detail->product) {
-                    // asumsi kolomnya bernama "sold"
+                    // Tambah jumlah terjual sesuai quantity pesanan
                     $detail->product->increment('sold', $detail->quantity);
+                    
+                    // Opsional: Kurangi stok real (jika belum dikurangi di awal)
+                    // $detail->product->decrement('stock', $detail->quantity);
                 }
             }
         }
 
-        return $transaction->load('details.product');
+        return response()->json([
+            'message' => 'Status updated successfully',
+            'data' => $transaction->load('details.product')
+        ]);
     }
+    
     public function show(Request $r, Transaction $transaction)
     {
         // buyer ATAU seller boleh lihat

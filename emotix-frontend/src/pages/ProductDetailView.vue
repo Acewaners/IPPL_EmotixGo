@@ -49,6 +49,28 @@ const galleryImages = computed(() => {
 
 const selectedImage = ref('')
 
+const getSentimentBadge = (sentiment) => {
+  switch (sentiment) {
+    case 'positive':
+      return { 
+        label: 'Positive 😊', 
+        classes: 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+      }
+    case 'negative':
+      return { 
+        label: 'Negative 😟', 
+        classes: 'bg-rose-50 text-rose-700 border-rose-200' 
+      }
+    case 'neutral':
+      return { 
+        label: 'Neutral 😐', 
+        classes: 'bg-amber-50 text-amber-700 border-amber-200' 
+      }
+    default:
+      return null
+  }
+}
+
 // 🔹 ambil review per produk
 const loadReviews = async (productId) => {
   reviewsLoading.value = true
@@ -268,19 +290,6 @@ const submitReview = async () => {
               </div>
             </div>
 
-            <div class="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-              <button
-                v-for="(img, idx) in galleryImages"
-                :key="idx"
-                type="button"
-                @click="selectedImage = img"
-                class="relative w-20 h-20 md:w-24 md:h-24 flex-shrink-0 bg-gray-50 rounded-xl border-2 overflow-hidden transition-all duration-200"
-                :class="selectedImage === img ? 'border-black ring-1 ring-black' : 'border-transparent hover:border-gray-300'"
-              >
-                <img :src="img" class="w-full h-full object-contain p-2 mix-blend-multiply" />
-              </button>
-            </div>
-
             <div class="hidden lg:block pt-8 border-t border-gray-100">
               <h3 class="text-lg font-bold text-gray-900 mb-4">Deskripsi Produk</h3>
               <div class="prose prose-sm text-gray-600 max-w-none whitespace-pre-line leading-relaxed">
@@ -372,7 +381,7 @@ const submitReview = async () => {
                 <button
                   @click="addToCart"
                   :disabled="!inStock"
-                  class="flex-1 px-8 py-4 bg-white border-2 border-black text-black rounded-xl font-bold text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  class="flex-1 px-8 py-4 bg-black text-white rounded-xl font-bold text-sm shadow-xl hover:bg-gray-900 hover:shadow-2xl hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 transition-all"
                 >
                   Add to Cart
                 </button>
@@ -512,7 +521,7 @@ const submitReview = async () => {
                 <div v-if="reviewsLoading" class="text-center py-8">
                   <div class="inline-block w-6 h-6 border-2 border-gray-200 border-t-black rounded-full animate-spin"></div>
                 </div>
-                
+
                 <div v-else-if="!reviews.length" class="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-200">
                   <p class="text-sm text-gray-500">Belum ada ulasan. Jadilah yang pertama memberikan review!</p>
                 </div>
@@ -528,17 +537,33 @@ const submitReview = async () => {
                         <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-500 text-sm">
                           {{ (rev.buyer?.name || 'U').charAt(0).toUpperCase() }}
                         </div>
+                        
                         <div>
                           <p class="font-bold text-sm text-gray-900">{{ rev.buyer?.name || 'Verified Buyer' }}</p>
-                          <div class="flex items-center gap-2">
+                          
+                          <div class="flex items-center gap-2 mt-1">
                             <div class="flex text-yellow-400">
                               <StarIcon v-for="n in 5" :key="n" class="w-3 h-3" :class="n <= rev.rating ? 'fill-current' : 'text-gray-200'" />
                             </div>
-                            <span class="text-xs text-gray-400">• {{ new Date(rev.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) }}</span>
-                          </div>
+
+                            <span class="text-xs text-gray-300">|</span>
+
+                            <span class="text-xs text-gray-400">
+                              {{ new Date(rev.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) }}
+                            </span>
+
+                            <span 
+                              v-if="getSentimentBadge(rev.sentiment)"
+                              class="ml-2 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full border"
+                              :class="getSentimentBadge(rev.sentiment).classes"
+                            >
+                              {{ getSentimentBadge(rev.sentiment).label }}
+                            </span>
+                            </div>
                         </div>
                       </div>
                     </div>
+                    
                     <p class="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
                       {{ rev.review_text }}
                     </p>
