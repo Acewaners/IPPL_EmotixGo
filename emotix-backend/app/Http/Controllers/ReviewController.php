@@ -31,12 +31,12 @@ class ReviewController extends Controller
         $count = $reviews->count();
         $avgRating = $count ? round($reviews->avg('rating'), 1) : 0;
 
-        // 🔹 Hitung sentiment dari kolom `sentiment` dulu
+        // 🔹 Hitung sentiment dari kolom `sentiment`
         $positive = $reviews->where('sentiment', 'positive')->count();
         $neutral  = $reviews->where('sentiment', 'neutral')->count();
         $negative = $reviews->where('sentiment', 'negative')->count();
 
-        // Kalau semua nol (belum dianalisis AI), fallback ke rating
+        // Kalau semua nol (belum dianalisis AI atau review hanya bintang), fallback ke rating
         if ($positive + $neutral + $negative === 0) {
             $positive = $reviews->where('rating', '>=', 4)->count();
             $neutral  = $reviews->where('rating', 3)->count();
@@ -94,34 +94,32 @@ class ReviewController extends Controller
      */
     public function store(Request $r)
     {
-        // 1. Validasi
+        // 1. Validasi Fleksibel (Required Without)
         $data = $r->validate([
             'product_id'  => 'required|integer|exists:products,product_id',
-            'review_text' => 'required|string|min:5',
-            'rating'      => 'nullable|integer|min:0|max:5',
+            // Review text wajib ada JIKA rating kosong
+            'review_text' => 'required_without:rating|nullable|string',
+            // Rating wajib ada JIKA review_text kosong
+            'rating'      => 'required_without:review_text|nullable|integer|min:1|max:5',
         ]);
 
-        // Cek pembelian...
-        // $hasBought = TransactionDetail::where('product_id', $data['product_id'])
-        //     ->whereHas('transaction', function ($q) use ($r) {
-        //         $q->where('buyer_id', $r->user()->user_id)->where('status', 'completed');
-        //     })->exists();
-        // abort_unless($hasBought, 422, 'You can only review completed orders.');
+        $aiStars = null;
+        $sentimentLabel = null;
+        $ai = []; 
 
-        // 2. 🧠 PANGGIL AI (Indonesian Model)
-        // Panggil service yang menjalankan script Python di atas
-        $ai = $this->sentiment->analyze($data['review_text']); 
-
-        // Hasil murni dari AI
-        $sentimentLabel = $ai['label'] ?? null; // 'positive'
-        $aiStars = $ai['stars'] ?? null;        // 5
+        // 2. 🧠 PANGGIL AI (Hanya jika ada teks review)
+        if (!empty($data['review_text'])) {
+            $ai = $this->sentiment->analyze($data['review_text']);
+            $sentimentLabel = $ai['label'] ?? null;
+            $aiStars = $ai['stars'] ?? null;
+        }
 
         // 3. Tentukan Rating Final
-        // Jika user tidak mengisi rating, AMBIL DARI AI.
-        // Jika user mengisi rating, prioritas tetap input user.
-        $finalRating = $data['rating'] ?? $aiStars;
-        
-        // Safety check: kalau AI gagal dan user kosong, default ke 3 atau null
+        // Prioritas: Rating User (jika ada) > Rating AI (jika ada teks) > Default 3
+        $userRating = $data['rating'] ?? null;
+        $finalRating = $userRating ?: $aiStars;
+
+        // Safety check: Jika user hanya kasih teks tapi AI gagal menebak bintang, fallback ke 3
         if (!$finalRating) {
              $finalRating = 3; 
         }
@@ -133,13 +131,13 @@ class ReviewController extends Controller
                 'product_id' => $data['product_id'],
             ],
             [
-                'review_text' => $data['review_text'],
+                'review_text' => $data['review_text'] ?? null, // Bisa null jika user cuma kasih bintang
                 'rating'      => $finalRating,
-                'sentiment'   => $sentimentLabel,
+                'sentiment'   => $sentimentLabel, // Bisa null jika tanpa teks
             ]
         );
 
-        // 5. Simpan Log
+        // 5. Simpan Log Sentimen (Hanya jika ada hasil sentimen)
         if ($sentimentLabel) {
             Sentiment::updateOrCreate(
                 ['review_id' => $review->review_id],
@@ -149,6 +147,9 @@ class ReviewController extends Controller
                     'analyzed_at'   => now(),
                 ]
             );
+        } else {
+            // Opsional: Jika user mengubah review jadi "hanya bintang", kita bisa hapus record sentimen lama
+            // Sentiment::where('review_id', $review->review_id)->delete();
         }
 
         return $review->load('product', 'buyer', 'sentimentRecord');
@@ -156,53 +157,47 @@ class ReviewController extends Controller
 
     /**
      * Update review (teks / rating)
-     * (kalau mau, nanti bisa sekalian re-run AI di sini juga)
      */
     public function update(Request $r, Review $review)
     {
-        // 1. Cek Authorisasi (Pastikan yang edit adalah pemilik review)
+        // 1. Cek Authorisasi
         abort_unless($review->buyer_id === $r->user()->user_id, 403);
 
-        // 2. Validasi Input
+        // 2. Validasi Input (Sama fleksibelnya dengan store)
         $data = $r->validate([
-            'review_text' => 'required|string|min:5',
-            'rating'      => 'nullable|integer|min:0|max:5', // Boleh null
+            'review_text' => 'required_without:rating|nullable|string',
+            'rating'      => 'required_without:review_text|nullable|integer|min:1|max:5',
         ]);
 
-        // 3. 🧠 PANGGIL AI (Analisis Ulang)
-        // Karena teks berubah, kita wajib analisa lagi sentimennya
-        $ai = $this->sentiment->analyze($data['review_text']);
-        
-        // Ambil hasil label baru
-        $sentimentLabel = $ai['label'] ?? null;
+        $sentimentLabel = $review->sentiment; // Default pakai sentimen lama
+        $ai = [];
 
-        // 4. Fallback Logic (Jika AI Gagal)
-        // Jika AI error/null, coba tebak manual dari rating BARU (jika user ngisi rating)
-        if (!$sentimentLabel && !empty($data['rating'])) {
-            if ($data['rating'] >= 4) {
-                $sentimentLabel = 'positive';
-            } elseif ($data['rating'] == 3) {
-                $sentimentLabel = 'neutral';
-            } else {
-                $sentimentLabel = 'negative';
+        // 3. 🧠 PANGGIL AI (Hanya jika teks ada dan berubah)
+        if (!empty($data['review_text'])) {
+            // Jika teks berubah atau baru ditambahkan, jalankan AI
+            if ($data['review_text'] !== $review->review_text) {
+                $ai = $this->sentiment->analyze($data['review_text']);
+                $sentimentLabel = $ai['label'] ?? null;
             }
+        } else {
+            // Jika user menghapus teks (hanya sisa bintang), hapus sentimen
+            $sentimentLabel = null;
         }
 
-        // 5. Lakukan Update ke Database
+        // 4. Lakukan Update ke Database
         $review->update([
-            'review_text' => $data['review_text'],
-            'rating'      => $data['rating'],    // Value rating baru (bisa null)
-            'sentiment'   => $sentimentLabel,    // Value sentiment baru
+            'review_text' => $data['review_text'] ?? null,
+            'rating'      => $data['rating'] ?? $review->rating, // Jika rating tidak dikirim, pakai yang lama
+            'sentiment'   => $sentimentLabel,
         ]);
 
-        // 6. Update juga log di tabel `sentiments`
-        // Agar data history analisis tetap sinkron dengan review terbaru
+        // 5. Update Log Sentimen
         if ($sentimentLabel) {
             Sentiment::updateOrCreate(
                 ['review_id' => $review->review_id],
                 [
                     'category'      => $sentimentLabel,
-                    'model_version' => $ai['model'] ?? 'update-v1', // Penanda ini hasil update
+                    'model_version' => $ai['model'] ?? 'update-v1',
                     'analyzed_at'   => now(),
                 ]
             );

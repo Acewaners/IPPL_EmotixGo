@@ -212,37 +212,47 @@ const submitError = ref('')
 
 // --- 2. Fungsi Submit Review ---
 const submitReview = async () => {
-  // Validasi: Cukup cek teks saja, rating boleh kosong
-  if (!newReview.value.text || newReview.value.text.length < 5) {
-    submitError.value = 'Tulis review minimal 5 karakter.'
-    return
+  // Ambil nilai saat ini
+  const text = newReview.value.text ? newReview.value.text.trim() : '';
+  const rating = newReview.value.rating;
+
+  // 1. Validasi: Salah satu wajib ada
+  if (!text && !rating) {
+    submitError.value = 'Mohon berikan Bintang ATAU tulis Ulasan.';
+    return;
+  }
+
+  // (Opsional) Jika menulis teks, minimal 5 karakter agar bermakna
+  if (text && text.length < 5) {
+    submitError.value = 'Ulasan teks minimal 5 karakter.';
+    return;
   }
 
   isSubmitting.value = true
   submitError.value = ''
 
   try {
-    // Kirim ke Backend
+    // 2. Kirim ke Backend (Kirim null jika kosong)
     await api.post('/reviews', {
       product_id: product.value.product_id,
-      review_text: newReview.value.text,
-      rating: newReview.value.rating // Bisa null/kosong
+      review_text: text || null, 
+      rating: rating || null     
     })
 
-    // Reset form jika sukses
+    // Reset form
     newReview.value.text = ''
     newReview.value.rating = null
     
-    // Reload list review biar muncul yang baru
+    // Reload list
     await loadReviews(product.value.product_id)
     
   } catch (e) {
-    // Handle error (misal: belum beli barang)
     submitError.value = e.response?.data?.message || 'Gagal mengirim review.'
   } finally {
     isSubmitting.value = false
   }
 }
+
 </script>
 
 <template>
@@ -461,7 +471,7 @@ const submitReview = async () => {
 
                 <button
                   @click="submitReview"
-                  :disabled="!newReview.text || newReview.text.length < 5 || isSubmitting"
+                  :disabled="isSubmitting || (!newReview.text && !newReview.rating)"
                   class="w-full bg-black text-white text-sm font-bold py-3 rounded-xl hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
                   {{ isSubmitting ? 'Mengirim...' : 'Kirim Review' }}

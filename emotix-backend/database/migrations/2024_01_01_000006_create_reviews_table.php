@@ -15,7 +15,7 @@ return new class extends Migration {
             // Relasi ke users.user_id (Buyer)
             $table->foreignId('buyer_id')->constrained('users', 'user_id')->onDelete('cascade');
             
-            $table->text('review_text');
+            $table->text('review_text')->nullable();
             $table->integer('rating')->nullable(); // Set nullable langsung biar aman
             $table->string('sentiment')->nullable();
             

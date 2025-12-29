@@ -122,7 +122,11 @@ const submitReview = async (productId) => {
   const text = (drafts.value[productId] || '').trim()
   const rating = ratingDrafts.value[productId] || 0
 
-  if (!text) return
+  // Validasi: Salah satu harus ada
+  if (!text && !rating) {
+    alert("Mohon isi bintang atau teks review.");
+    return;
+  }
 
   submitting.value = true
   savingId.value = productId
@@ -131,17 +135,17 @@ const submitReview = async (productId) => {
   try {
     await api.post('/reviews', {
       product_id: productId,
-      review_text: text,
-      rating,
+      review_text: text || null,
+      rating: rating || null,
     })
 
+    // Reset & Reload
     drafts.value[productId] = ''
     ratingDrafts.value[productId] = 0
     await reloadReviews()
   } catch (e) {
     console.error(e)
-    error.value =
-      e?.response?.data?.message || 'Gagal mengirim review.'
+    alert(e?.response?.data?.message || 'Gagal mengirim review.')
   } finally {
     submitting.value = false
     savingId.value = null
@@ -164,24 +168,30 @@ const saveEdit = async () => {
   if (!editId.value) return
   const text = editDraft.value.trim()
   const rating = editRating.value || 0
-  if (!text) return
+  
+  // Validasi edit
+  if (!text && !rating) {
+      alert("Review tidak boleh kosong total.");
+      return;
+  }
 
   submitting.value = true
   error.value = ''
 
   try {
     await api.put(`/reviews/${editId.value}`, {
-      review_text: text,
-      rating,
+      review_text: text || null,
+      rating: rating || null,
     })
+    
+    // Reset state
     editId.value = null
     editDraft.value = ''
     editRating.value = 0
     await reloadReviews()
   } catch (e) {
     console.error(e)
-    error.value =
-      e?.response?.data?.message || 'Gagal menyimpan perubahan review.'
+    alert(e?.response?.data?.message || 'Gagal menyimpan perubahan.')
   } finally {
     submitting.value = false
   }
@@ -287,7 +297,7 @@ onMounted(loadAll)
                     <button
                       type="button"
                       @click="submitReview(item.product.product_id)"
-                      :disabled="submitting || !drafts[item.product.product_id] || drafts[item.product.product_id].trim().length < 5"
+                      :disabled="submitting || (!drafts[item.product.product_id] && !ratingDrafts[item.product.product_id])"
                       class="bg-black text-white px-6 py-2.5 rounded-full text-xs font-bold hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow active:scale-95"
                     >
                       {{ savingId === item.product.product_id && submitting ? 'Mengirim...' : 'Kirim Ulasan' }}
