@@ -40,6 +40,20 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
+const formatDate = (dateString) => {
+  if (!dateString) return '-'
+  const date = new Date(dateString)
+  return new Intl.DateTimeFormat('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).format(date)
+}
+
 </script>
 
 <template>
@@ -83,7 +97,9 @@ onMounted(async () => {
               </div>
               <div class="flex flex-col gap-1 sm:text-right">
                 <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Date</p>
-                <p class="text-sm text-gray-600">{{ o.transaction_date }}</p>
+                <p class="text-sm text-gray-600">
+                  {{ formatDate(o.transaction_date || o.created_at) }}
+                </p>
               </div>
               <div class="flex flex-col gap-1 sm:text-right">
                 <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Amount</p>

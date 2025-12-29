@@ -20,82 +20,108 @@ class TransactionController extends Controller
 
         return DB::transaction(function() use ($r,$data){
             $total = 0; $details = [];
+            
+            // 1. Hitung Total & Stok
             foreach($data['items'] as $it){
                 $p = Product::lockForUpdate()->findOrFail($it['product_id']);
                 abort_if($p->stock < $it['quantity'], 422, 'Stock not enough');
+                
                 $sub = $p->price * $it['quantity'];
                 $total += $sub;
                 $p->decrement('stock',$it['quantity']);
                 $details[] = ['product_id'=>$p->product_id,'quantity'=>$it['quantity'],'subtotal'=>$sub];
             }
+
+            // 2. Buat Transaksi (State Awal: PROCESSING)
             $trx = Transaction::create([
-                'buyer_id'=>$r->user()->user_id,
-                'seller_id'=>$data['seller_id'],
-                'total_price'=>$total,
-                'status'=>'pending_payment',
-                'created_at'=>now(),
+                'buyer_id'    => $r->user()->user_id,
+                'seller_id'   => $data['seller_id'],
+                'total_price' => $total,
+                
+                // ✅ UBAH DISINI: Langsung 'processing' (Lewati pending_payment)
+                'status'           => 'processing', 
+                
+                // Pastikan ini juga ada (Perbaikan Tanggal dari langkah sebelumnya)
+                'transaction_date' => now(), 
+                'created_at'       => now(),
             ]);
+
+            // 3. Simpan Detail Item
             foreach($details as $d){
                 TransactionDetail::create(['transaction_id'=>$trx->transaction_id] + $d);
             }
+            
             return $trx->load('details.product');
         });
     }
 
     public function indexBuyer(Request $r){
         return Transaction::where('buyer_id',$r->user()->user_id)
-            ->with('details.product')->latest('transaction_date')->paginate(10);
+            // Tambahkan 'seller' jika ingin menampilkan nama toko
+            ->with(['details.product', 'seller']) 
+            ->latest('transaction_date')
+            ->paginate(10);
     }
 
     public function indexSeller(Request $r){
         return Transaction::where('seller_id',$r->user()->user_id)
-            ->with('details.product')->latest('transaction_date')->paginate(10);
+            // ✅ PERBAIKAN: Tambahkan 'buyer' disini
+            ->with(['details.product', 'buyer']) 
+            ->latest('transaction_date')
+            ->paginate(10);
     }
 
     public function updateStatus(Request $r, $id)
     {
-        // 1. Cari transaksi secara manual (lebih aman dari error binding)
         $transaction = Transaction::findOrFail($id);
 
-        // 2. Validasi Status (Sesuaikan dengan frontend Anda)
-        // Tambahkan 'cancelled' jika frontend mengirim status itu
         $r->validate([
             'status'          => 'required|in:pending_payment,processing,shipped,completed,failed,cancelled',
             'tracking_number' => 'nullable|max:100',
         ]);
 
         $user = $r->user();
-        $userId = $user->user_id; // Pastikan primary key user Anda 'user_id'
+        $userId = $user->user_id;
 
-        // 3. Cek Kepemilikan & Role
         $isSeller = $userId === $transaction->seller_id;
         $isBuyer  = $userId === $transaction->buyer_id;
-        // Cek apakah user adalah admin (sesuai kolom di database Anda, misal 'role' atau 'is_admin')
         $isAdmin  = ($user->role === 'admin') || ($user->is_admin == 1); 
 
-        // 4. Logika Izin: Izinkan jika Seller, Buyer, ATAU Admin
-        abort_unless($isSeller || $isBuyer || $isAdmin, 403, 'Not allowed. You are not the owner of this order.');
+        abort_unless($isSeller || $isBuyer || $isAdmin, 403);
 
         $oldStatus = $transaction->status;
+        $requestedStatus = $r->input('status');
 
-        // 5. Logika Update
+        // --- LOGIKA UTAMA PERBAIKAN ---
         if ($isBuyer && !$isAdmin) {
-            // Buyer hanya boleh konfirmasi selesai
-            if ($r->input('status') !== 'completed') {
-                abort(403, 'Buyer can only mark order as completed.');
+            
+            // 1. Jika Buyer ingin 'processing' (Bayar)
+            if ($requestedStatus === 'processing') {
+                // Izinkan jika statusnya 'pending_payment' ATAU sudah 'processing' (biar tidak error)
+                if (in_array($transaction->status, ['pending_payment', 'processing'])) {
+                    $transaction->update(['status' => 'processing']);
+                    return $transaction->load(['details.product', 'buyer']);
+                }
+            } 
+            // 2. Jika Buyer ingin 'completed' (Terima Barang)
+            elseif ($requestedStatus === 'completed') {
+                $transaction->update(['status' => 'completed']);
+            } 
+            else {
+                abort(403, 'Buyer can only pay (processing) or mark as completed.');
             }
-            $transaction->update(['status' => 'completed']);
+
         } else {
-            // Seller atau Admin bebas ubah status apa saja
+            // Seller/Admin bebas
             $transaction->update($r->only('status', 'tracking_number'));
         }
+        // -----------------------------
 
-        // 6. Logika Tambah "Sold" (Terjual)
+        // Logika Tambah "Sold" (Terjual)
         if ($oldStatus !== 'completed' && $transaction->status === 'completed') {
             $transaction->loadMissing('details.product');
             foreach ($transaction->details as $detail) {
                 if ($detail->product) {
-                    // Pastikan kolom 'sold' ada di tabel products
                     $detail->product->increment('sold', $detail->quantity);
                 }
             }

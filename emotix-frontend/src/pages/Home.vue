@@ -39,6 +39,7 @@ const slides = [
 const products = ref([])
 const loading = ref(true)
 const error = ref('')
+const bestSellingProducts = ref([])
 const openDetail = (product) => {
   if (!product?.product_id) return
   r.push(`/products/${product.product_id}`)
@@ -48,11 +49,19 @@ const openDetail = (product) => {
 
 // Ambil data dari backend TANPA paksa login
 onMounted(async () => {
+  loading.value = true
   try {
-    const res = await api.get('/products')
-    products.value = res.data?.data ?? []
+    // A. Ambil Best Selling (Endpoint Baru)
+    const resBest = await api.get('/products/best-selling')
+    bestSellingProducts.value = resBest.data?.data || []
+
+    // B. Ambil Semua Produk (Endpoint Lama)
+    const resAll = await api.get('/products')
+    products.value = resAll.data?.data || [] // Masuk ke variabel 'products'
+    
   } catch (e) {
-    error.value = e?.response?.data?.message || 'Gagal memuat produk.'
+    console.error("Gagal load data", e)
+    error.value = "Gagal memuat produk. Silakan coba lagi."
   } finally {
     loading.value = false
   }
@@ -199,23 +208,28 @@ onUnmounted(() => {
             </div>
             <h2 class="text-3xl font-bold">Best Selling Products</h2>
           </div>
+          
+          </div>
+
+        <div v-if="loading" class="py-12 text-center text-gray-500 flex flex-col items-center">
+           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500 mb-2"></div>
+           Loading...
         </div>
 
-        <!-- STATE -->
-        <div v-if="loading" class="py-12 text-center text-gray-500">
-          Loading...
-        </div>
         <div v-else-if="error" class="py-12 text-center text-red-500">
           {{ error }}
         </div>
 
-        <!-- PRODUCTS -->
+        <div v-else-if="bestSellingProducts.length === 0" class="py-12 text-center text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+           <p class="text-lg font-medium">Belum ada produk terlaris bulan ini.</p>
+           <p class="text-sm">Jadilah pembeli pertama!</p>
+        </div>
+
         <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-4">
           <ProductCard
-            v-for="p in bestSelling"
+            v-for="p in bestSellingProducts"
             :key="p.product_id"
             :product="p"
-                @open="openDetail"
           />
         </div>
       </section>
@@ -258,11 +272,11 @@ onUnmounted(() => {
         >
           <ProductCard 
             v-for="product in products" 
-            :key="product.id" 
+            :key="product.product_id" 
             :product="product" 
             class="min-w-[250px] md:min-w-[280px]" 
           /> 
-          </div>
+        </div>
 
         <div class="mt-10 flex justify-start">
           <RouterLink 

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import {
   Bars3Icon,
@@ -15,6 +15,7 @@ import {
 } from '@heroicons/vue/24/outline'
 import { useAuth } from '../stores/auth'
 import { useCartStore } from '../stores/cart'
+import { useWishlistStore } from '../stores/wishlist'
 
 const cart = useCartStore()
 
@@ -22,9 +23,10 @@ defineOptions({
   name: 'TheNavbar',
 })
 
+const wishlist = useWishlistStore()
 const r = useRouter()
 const auth = useAuth()
-
+const wishlistCount = computed(() => cart.wishlist.length)
 const isMobileMenuOpen = ref(false)
 const isAccountMenuOpen = ref(false)
 
@@ -74,6 +76,15 @@ const goToBuyerReviews = () => {
   closeAccountMenu() // Untuk desktop
   closeMobileMenu()  // TAMBAHKAN INI agar menu HP tertutup otomatis
 }
+
+onMounted(() => {
+  if (auth.token) {
+    // Sekarang ini aman karena 'wishlist' sudah didefinisikan di atas
+    wishlist.fetchWishlist()
+    // cart.fetchCart() 
+  }
+})
+
 </script>
 
 <template>
@@ -106,8 +117,19 @@ const goToBuyerReviews = () => {
         </div>
 
         <div class="flex items-center gap-2">
-          <button @click="goToWishlist" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-700 hover:text-black transition-all active:scale-95" aria-label="Wishlist">
+          <button 
+            @click="goToWishlist" 
+            class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-700 hover:text-black transition-all active:scale-95 relative" 
+            aria-label="Wishlist"
+          >
             <HeartIcon class="w-6 h-6 transition-transform hover:scale-110" />
+            
+            <span 
+              v-if="wishlistCount > 0" 
+              class="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border-2 border-white shadow-sm"
+            >
+              {{ wishlistCount }}
+            </span>
           </button>
 
           <button @click="goToCart" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-700 hover:text-black transition-all active:scale-95 relative" aria-label="Cart">

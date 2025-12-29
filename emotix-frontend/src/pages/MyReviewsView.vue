@@ -197,6 +197,24 @@ const saveEdit = async () => {
   }
 }
 
+const deleteReview = async (rev) => {
+  if (!confirm(`Apakah Anda yakin ingin menghapus ulasan untuk "${rev.product?.product_name}"?`)) {
+    return;
+  }
+
+  try {
+    await api.delete(`/reviews/${rev.review_id}`)
+    
+    // Refresh data agar ulasan hilang dari daftar "Riwayat" 
+    // dan kembali muncul di daftar "Menunggu Ulasan"
+    await reloadReviews()
+    
+  } catch (e) {
+    console.error(e)
+    alert(e?.response?.data?.message || 'Gagal menghapus ulasan.')
+  }
+}
+
 onMounted(loadAll)
 </script>
 
@@ -345,6 +363,12 @@ onMounted(loadAll)
                     class="text-xs font-bold text-black hover:underline"
                   >
                     Edit
+                  </button>
+                  <button
+                    @click="deleteReview(rev)"
+                    class="text-xs font-bold text-red-500 hover:text-red-700 hover:underline"
+                  >
+                    Hapus
                   </button>
                 </div>
 

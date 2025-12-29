@@ -71,7 +71,7 @@ const updateStatusToCompleted = async () => {
   try {
     const id = order.value.transaction_id
     await api.post(`/transactions/${id}/status`, {
-      status: 'completed',
+      status: 'processing',
       tracking_number: null,
     })
     // status.value = 'success'

@@ -21,6 +21,8 @@ const openCreate = ref(false)
 const openEdit = ref(false)
 const editing = ref(null)
 
+const isSaving = ref(false)
+
 const STORAGE_BASE = import.meta.env.VITE_STORAGE_BASE || 'http://localhost:8000/storage'
 const imgSrc = (path) => {
   if (!path) return '/dummy-qr.png' // Gambar default jika kosong
@@ -97,14 +99,17 @@ async function loadSellerOrders() {
 }
 
 async function createProduct(payload) {
-  try {
-    if (!payload.category_id) return alert('Kategori wajib dipilih')
-    if (!payload.product_name?.trim()) return alert('Nama produk wajib')
-    if (payload.price == null || Number(payload.price) < 0)
-      return alert('Harga tidak valid')
-    if (payload.stock == null || Number(payload.stock) < 0)
-      return alert('Stok tidak valid')
+  // 1. Validasi manual (tetap sama)
+  if (!payload.category_id) return alert('Kategori wajib dipilih')
+  if (!payload.product_name?.trim()) return alert('Nama produk wajib')
+  if (payload.price == null || Number(payload.price) < 0) return alert('Harga tidak valid')
+  if (payload.stock == null || Number(payload.stock) < 0) return alert('Stok tidak valid')
 
+  // 2. Set Loading ON
+  isSaving.value = true 
+
+  try {
+    // Logika simpan (tetap sama)
     if (!payload.image) {
       await api.post('/products', {
         category_id: Number(payload.category_id),
@@ -128,8 +133,14 @@ async function createProduct(payload) {
 
     openCreate.value = false
     await loadProducts()
+    
+    // (Opsional) Jika pakai Toast, panggil disini: toast.success(...)
+    
   } catch (e) {
     alert(e?.response?.data?.message || 'Gagal membuat produk')
+  } finally {
+    // 3. Set Loading OFF (Wajib di finally agar tombol nyala lagi meski error)
+    isSaving.value = false 
   }
 }
 
@@ -147,19 +158,17 @@ function startEdit(row) {
 }
 
 async function updateProduct(payload) {
+  // 1. Set Loading ON
+  isSaving.value = true
+
   try {
     const form = new FormData()
     form.append('_method', 'PUT')
-    if (payload.category_id != null)
-      form.append('category_id', String(payload.category_id))
-    if (payload.product_name != null)
-      form.append('product_name', payload.product_name ?? '')
-    if (payload.price != null)
-      form.append('price', String(payload.price ?? 0))
-    if (payload.stock != null)
-      form.append('stock', String(payload.stock ?? 0))
-    if (payload.description != null)
-      form.append('description', payload.description ?? '')
+    if (payload.category_id != null) form.append('category_id', String(payload.category_id))
+    if (payload.product_name != null) form.append('product_name', payload.product_name ?? '')
+    if (payload.price != null) form.append('price', String(payload.price ?? 0))
+    if (payload.stock != null) form.append('stock', String(payload.stock ?? 0))
+    if (payload.description != null) form.append('description', payload.description ?? '')
     if (payload.image) form.append('image', payload.image)
 
     await api.post(`/products/${editing.value.product_id}`, form, {
@@ -170,6 +179,9 @@ async function updateProduct(payload) {
     await loadProducts()
   } catch (e) {
     alert(e?.response?.data?.message || 'Gagal update produk')
+  } finally {
+    // 2. Set Loading OFF
+    isSaving.value = false 
   }
 }
 
@@ -513,7 +525,7 @@ const activeProducts = computed(
             image: null,
           }"
           :categories="categories"
-          @submit="createProduct"
+          :is-loading="isSaving"  @submit="createProduct"
           :key="openCreate ? 'create-form-open' : 'create-form-closed'"
         />
       </Modal>
@@ -527,7 +539,7 @@ const activeProducts = computed(
         <ProductForm
           :model-value="editing || {}"
           :categories="categories"
-          @submit="updateProduct"
+          :is-loading="isSaving"  @submit="updateProduct"
           :key="editing?.product_id || 'edit'"
         />
       </Modal>

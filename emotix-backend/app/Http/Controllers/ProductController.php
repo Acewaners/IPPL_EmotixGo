@@ -103,6 +103,16 @@ class ProductController extends Controller
         return response()->json($product->load('category','seller'), 201);
     }
 
+    public function bestSelling()
+    {
+        $products = Product::where('sold', '>', 0) // Filter: Hanya yang sudah pernah terjual
+            ->orderBy('sold', 'desc')              // Urutkan: Dari yang paling banyak terjual
+            ->take(4)                              // Limit: Ambil 4 saja (untuk tampilan Home)
+            ->get();
+
+        return response()->json(['data' => $products]);
+    }
+
     // PUT/PATCH /api/products/{product}
     public function update(Request $request, Product $product)
     {

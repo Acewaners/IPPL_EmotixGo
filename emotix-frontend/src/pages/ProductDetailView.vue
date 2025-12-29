@@ -7,10 +7,12 @@ import { api } from '../lib/api'
 import { useCartStore } from '../stores/cart'
 import { HeartIcon, StarIcon } from '@heroicons/vue/24/solid'
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/vue/24/solid'
+import { useAuth } from '../stores/auth'
 
 const router = useRouter()
 const route = useRoute()
 const cart = useCartStore()
+const auth = useAuth()
 
 const loading = ref(true)
 const error = ref('')
@@ -48,6 +50,20 @@ const galleryImages = computed(() => {
 })
 
 const selectedImage = ref('')
+
+const deleteReview = async (rev) => {
+  if (!confirm('Apakah Anda yakin ingin menghapus ulasan ini?')) return
+
+  try {
+    await api.delete(`/reviews/${rev.review_id}`)
+    
+    // Reload review agar hilang dari daftar
+    await loadReviews(product.value.product_id)
+    
+  } catch (e) {
+    alert(e.response?.data?.message || 'Gagal menghapus review')
+  }
+}
 
 const getSentimentBadge = (sentiment) => {
   switch (sentiment) {
@@ -555,13 +571,10 @@ const submitReview = async () => {
                             <div class="flex text-yellow-400">
                               <StarIcon v-for="n in 5" :key="n" class="w-3 h-3" :class="n <= rev.rating ? 'fill-current' : 'text-gray-200'" />
                             </div>
-
                             <span class="text-xs text-gray-300">|</span>
-
                             <span class="text-xs text-gray-400">
                               {{ new Date(rev.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) }}
                             </span>
-
                             <span 
                               v-if="getSentimentBadge(rev.sentiment)"
                               class="ml-2 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full border"
@@ -569,9 +582,18 @@ const submitReview = async () => {
                             >
                               {{ getSentimentBadge(rev.sentiment).label }}
                             </span>
-                            </div>
+                          </div>
                         </div>
                       </div>
+
+                      <button 
+                        v-if="auth.user && auth.user.user_id === rev.buyer_id"
+                        @click="deleteReview(rev)"
+                        class="text-xs font-bold text-gray-400 hover:text-red-600 transition-colors"
+                        title="Hapus Ulasan Anda"
+                      >
+                        <TrashIcon class="w-4 h-4" /> Hapus
+                      </button>
                     </div>
                     
                     <p class="text-sm text-gray-600 leading-relaxed whitespace-pre-line">

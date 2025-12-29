@@ -130,15 +130,6 @@ const signUpWithGoogle = () => {
                 <div class="flex-grow border-t border-gray-200"></div>
               </div>
 
-              <button 
-                type="button" 
-                @click="signUpWithGoogle" 
-                class="w-full bg-white border border-gray-200 text-gray-700 font-bold text-sm py-3.5 rounded-full hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center justify-center gap-3"
-              >
-                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" class="w-5 h-5" />
-                Sign Up with Google
-              </button>
-
               <p class="text-center text-sm text-gray-500 mt-6">
                 Already have an account?
                 <RouterLink to="/login" class="text-black font-bold hover:underline ml-1">

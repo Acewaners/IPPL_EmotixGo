@@ -80,6 +80,11 @@ export const useCartStore = defineStore('cart', {
       this.cartItems = []
     },
 
+    clearUserData() {
+      this.cartItems = []
+      this.wishlist = []
+    },
+
     moveWishlistToCart() {
       this.wishlist.forEach((w) => this.addToCart(w.product, 1))
       this.wishlist = []

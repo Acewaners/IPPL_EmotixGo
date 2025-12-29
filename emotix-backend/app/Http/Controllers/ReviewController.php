@@ -89,6 +89,22 @@ class ReviewController extends Controller
         return response()->json($reviews);
     }
 
+
+    public function destroy(Request $r, Review $review)
+    {
+        // 1. Cek Authorisasi (Pastikan yang menghapus adalah pemilik review)
+        if ($review->buyer_id !== $r->user()->user_id) {
+            return response()->json(['message' => 'Anda tidak berhak menghapus ulasan ini.'], 403);
+        }
+
+        // 2. Hapus Sentimen terkait (Membersihkan sampah data)
+        Sentiment::where('review_id', $review->review_id)->delete();
+
+        // 3. Hapus Review
+        $review->delete();
+
+        return response()->json(['message' => 'Ulasan berhasil dihapus.']);
+    }
     /**
      * Buat / update review untuk 1 produk
      */
@@ -103,19 +119,29 @@ class ReviewController extends Controller
             'rating'      => 'required_without:review_text|nullable|integer|min:1|max:5',
         ]);
 
+        $hasPurchased = TransactionDetail::where('product_id', $data['product_id'])
+            ->whereHas('transaction', function($q) use ($r) {
+                $q->where('buyer_id', $r->user()->user_id)
+                  ->where('status', 'completed'); // Wajib status selesai
+            })->exists();
+
+        // Jika belum beli atau transaksi belum selesai, tolak!
+        if (!$hasPurchased) {
+            return response()->json([
+                'message' => 'Anda harus membeli produk ini dan menyelesaikan pesanan (status Completed) sebelum memberikan ulasan.'
+            ], 403); // 403 Forbidden
+        }
+
         $aiStars = null;
         $sentimentLabel = null;
         $ai = []; 
 
-        // 2. 🧠 PANGGIL AI (Hanya jika ada teks review)
         if (!empty($data['review_text'])) {
             $ai = $this->sentiment->analyze($data['review_text']);
             $sentimentLabel = $ai['label'] ?? null;
             $aiStars = $ai['stars'] ?? null;
         }
 
-        // 3. Tentukan Rating Final
-        // Prioritas: Rating User (jika ada) > Rating AI (jika ada teks) > Default 3
         $userRating = $data['rating'] ?? null;
         $finalRating = $userRating ?: $aiStars;
 

@@ -25,6 +25,7 @@ Route::post('/register',[AuthController::class,'register']);
 Route::post('/login',[AuthController::class,'login']);
 
 Route::get('/products',[ProductController::class,'index']);
+Route::get('/products/best-selling', [ProductController::class, 'bestSelling']);
 Route::middleware('auth:sanctum')->group(function(){
     Route::get('/me',[AuthController::class,'me']);
     Route::post('/logout',[AuthController::class,'logout']);
@@ -49,6 +50,7 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::get('/reviews/me', [ReviewController::class, 'myReviews']);
     Route::post('/reviews', [ReviewController::class, 'store']);
     Route::put('/reviews/{review}', [ReviewController::class, 'update']);
+    Route::delete('/reviews/{review}', [ReviewController::class, 'destroy']);
 
     Route::get('/categories', [CategoryController::class, 'index']);
 

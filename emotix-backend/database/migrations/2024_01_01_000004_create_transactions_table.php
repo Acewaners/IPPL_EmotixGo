@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('buyer_id')->constrained('users', 'user_id')->onDelete('cascade');
             $table->foreignId('seller_id')->constrained('users', 'user_id')->onDelete('cascade');
             
-            $table->date('transaction_date')->nullable();
+            $table->dateTime('transaction_date')->nullable();
             $table->decimal('total_price', 12, 2);
             $table->string('status')->default('pending');
             $table->string('tracking_number')->nullable();

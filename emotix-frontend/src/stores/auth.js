@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { api } from '../lib/api'
+import { useCartStore } from './cart'
 
 export const useAuth = defineStore('auth', {
   state: () => ({
@@ -26,6 +27,8 @@ export const useAuth = defineStore('auth', {
       }
     },
     async logout() {
+      const cart = useCartStore()
+      cart.clearUserData()
       try { await api.post('/logout') } catch {}
       this.user = null
       this.token = null

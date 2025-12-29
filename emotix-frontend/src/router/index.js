@@ -21,6 +21,16 @@ const SuccessView = () => import('../pages/SuccessView.vue')
 
 const router = createRouter({
   history: createWebHistory(),
+
+  scrollBehavior(to, from, savedPosition) {
+    // Jika user menekan tombol Back/Forward browser, kembali ke posisi sebelumnya
+    if (savedPosition) {
+      return savedPosition
+    }
+    // Jika pindah halaman biasa, paksa scroll ke paling atas (Top: 0)
+    return { top: 0 }
+  },
+
   routes: [
   { path: '/', component: Home, meta: { auth: true } },
     { path: '/login', component: Login, meta: { guest: true } },

@@ -204,46 +204,9 @@ const placeOrder = async () => {
               />
             </div>
 
-            <div class="space-y-2">
-              <label class="text-sm font-semibold text-gray-700">Email Address <span class="text-red-500">*</span></label>
-              <input
-                v-model="billing.email"
-                type="email"
-                class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
-                placeholder="email@domain.com"
-              />
-            </div>
+            
 
-            <div class="pt-2">
-              <label class="inline-flex items-center gap-3 cursor-pointer group">
-                <div class="relative flex items-center">
-                  <input
-                    v-model="billing.saveInfo"
-                    type="checkbox"
-                    class="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-gray-300 transition-all checked:border-black checked:bg-black hover:border-black"
-                  />
-                  <svg
-                    class="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity peer-checked:opacity-100"
-                    width="12"
-                    height="12"
-                    viewBox="0 0 12 12"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M10 3L4.5 8.5L2 6"
-                      stroke="white"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                </div>
-                <span class="text-sm text-gray-600 group-hover:text-black transition-colors">
-                  Save this information for faster check-out next time
-                </span>
-              </label>
-            </div>
+            
           </form>
         </div>
 
