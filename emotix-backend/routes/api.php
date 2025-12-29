@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Request;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\TransactionController;
@@ -8,6 +10,14 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\Admin\UserController as AdminUser;
+
+Route::get('/debug-header', function (Request $request) {
+    Log::info('Header Check:', [
+        'Authorization' => $request->header('Authorization'),
+        'HasToken' => $request->hasHeader('Authorization'),
+    ]);
+    return response()->json(['header' => $request->header('Authorization')]);
+});
 
 Route::get('/health', fn() => response()->json(['ok' => true]));
 
