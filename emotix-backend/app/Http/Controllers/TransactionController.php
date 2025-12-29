@@ -52,57 +52,51 @@ class TransactionController extends Controller
             ->with('details.product')->latest('transaction_date')->paginate(10);
     }
 
-    public function updateStatus(Request $r, Transaction $transaction)
+    public function updateStatus(Request $r, $id) // Gunakan $id mentah agar tidak bentrok dengan primary key
     {
+        $transaction = Transaction::findOrFail($id);
+
         $r->validate([
-            'status'          => 'required|in:pending_payment,processing,shipped,completed,failed',
+            // Tambahkan 'cancelled' jika frontend menggunakannya
+            'status' => 'required|in:pending_payment,processing,shipped,completed,failed,cancelled',
             'tracking_number' => 'nullable|max:100',
         ]);
 
-        $userId  = $r->user()->user_id ?? null;
+        $user = $r->user();
+        $userId = $user->user_id;
         $isSeller = $userId === $transaction->seller_id;
         $isBuyer  = $userId === $transaction->buyer_id;
+        $isAdmin  = $user->role === 'admin' || ($user->is_admin ?? false);
 
-        // ❗ hanya buyer atau seller yg boleh ubah
-        abort_unless($isSeller || $isBuyer, 403, 'Not allowed.');
+        // Izinkan Seller, Buyer, atau Admin
+        abort_unless($isSeller || $isBuyer || $isAdmin, 403, 'Not allowed.');
 
-        // simpan status lama buat cek perubahan
         $oldStatus = $transaction->status;
 
-        if ($isBuyer) {
-            // buyer cuma boleh rubah dari pending_payment -> completed
-            if (
-                $oldStatus !== 'pending_payment' ||
-                $r->input('status') !== 'completed'
-            ) {
-                abort(403, 'Buyer cannot change this status.');
+        if ($isBuyer && !$isAdmin) {
+            // Buyer hanya boleh mengubah status menjadi 'completed' (Konfirmasi Terima Barang)
+            if ($r->input('status') !== 'completed') {
+                abort(403, 'Buyer can only mark order as completed.');
             }
-
-            // buyer tidak boleh ubah tracking_number
-            $transaction->update([
-                'status' => 'completed',
-            ]);
-
+            $transaction->update(['status' => 'completed']);
         } else {
-            // seller: bebas ubah status & tracking_number
+            // Seller atau Admin bisa mengubah semua
             $transaction->update($r->only('status', 'tracking_number'));
         }
 
-        // ⭐ DI SINI logika nambah SOLD per produk
+        // Logika nambah SOLD
         if ($oldStatus !== 'completed' && $transaction->status === 'completed') {
-            // pastikan relasi ke details & product sudah dimuat
             $transaction->loadMissing('details.product');
-
             foreach ($transaction->details as $detail) {
                 if ($detail->product) {
-                    // asumsi kolomnya bernama "sold"
                     $detail->product->increment('sold', $detail->quantity);
                 }
             }
         }
 
-        return $transaction->load('details.product');
+        return $transaction->load(['details.product', 'buyer']);
     }
+    
     public function show(Request $r, Transaction $transaction)
     {
         // buyer ATAU seller boleh lihat
