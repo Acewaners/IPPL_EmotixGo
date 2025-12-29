@@ -6,6 +6,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\Admin\UserController as AdminUser;
 
 Route::get('/health', fn() => response()->json(['ok' => true]));
@@ -23,8 +24,8 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::patch('/products/{product}',[ProductController::class,'update']);   // ✅ optional
     Route::delete('/products/{product}',[ProductController::class,'destroy']); // ✅ DELETE
     Route::get('/products/{product}/reviews', [ProductController::class, 'reviews']);
-    Route::post('/contact', [App\Http\Controllers\Api\ContactController::class, 'store']);
-
+    Route::post('/contact', [ContactController::class, 'store']);
+    
     Route::put('/seller/orders/{id}/status', [TransactionController::class, 'updateStatus']);
     Route::post('/transactions',[TransactionController::class,'create']);
     Route::get('/buyer/orders',[TransactionController::class,'indexBuyer']);

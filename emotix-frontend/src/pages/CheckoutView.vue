@@ -264,9 +264,6 @@ const placeOrder = async () => {
                       :alt="item.product.product_name"
                       class="w-full h-full object-contain mix-blend-multiply"
                     />
-                    <span class="absolute -top-2 -right-2 bg-gray-900 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full">
-                      {{ item.quantity }}
-                    </span>
                   </div>
                   <span class="text-sm font-medium text-gray-700 group-hover:text-black transition-colors line-clamp-2">
                     {{ item.product.product_name }}

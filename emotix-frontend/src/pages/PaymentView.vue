@@ -13,10 +13,21 @@ const order = ref(null)
 const loading = ref(true)
 const error = ref('')
 const status = ref('waiting')       // waiting | success | failed
-const remaining = ref(10)           // 10 detik
+const remaining = ref(3600)           // 10 detik
 const updating = ref(false)
 let timerId = null
 
+const formattedTime = computed(() => {
+  const hours = Math.floor(remaining.value / 3600)
+  const minutes = Math.floor((remaining.value % 3600) / 60)
+  const seconds = remaining.value % 60
+  
+  const h = hours.toString().padStart(2, '0')
+  const m = minutes.toString().padStart(2, '0')
+  const s = seconds.toString().padStart(2, '0')
+  
+  return `${h}:${m}:${s}`
+})
 // HELPER
 const formatPrice = (v) =>
   `Rp ${Number(v || 0).toLocaleString('id-ID')}`
@@ -147,7 +158,7 @@ onBeforeUnmount(() => {
             <span>Complete payment within</span>
           </div>
           <span class="font-mono font-bold text-amber-900 bg-amber-100 px-2 py-1 rounded text-sm">
-            00:{{ remaining.toString().padStart(2, '0') }}
+            {{ formattedTime }}
           </span>
         </div>
 
