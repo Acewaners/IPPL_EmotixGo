@@ -11,18 +11,15 @@ const loading = ref(true)
 const error = ref('')
 
 const submitting = ref(false)
-const savingId = ref(null)   // product_id yg lagi di-submit
-const editId = ref(null)     // review_id yg lagi diedit
+const savingId = ref(null)   
+const editId = ref(null)     
 
-// draft text & rating untuk produk yang belum direview
-const drafts = ref({})          // product_id -> teks
-const ratingDrafts = ref({})    // product_id -> rating (1–5)
+const drafts = ref({})          
+const ratingDrafts = ref({})    
 
-// draft text & rating saat edit review
 const editDraft = ref('')
 const editRating = ref(0)
 
-// base url gambar
 const STORAGE_BASE =
   import.meta.env?.VITE_STORAGE_BASE ?? 'http://localhost:8000/storage'
 
@@ -55,7 +52,7 @@ const loadAll = async () => {
   try {
     const [trxRes, revRes] = await Promise.all([
       api.get('/buyer/transactions'),
-      // ✅ Tambahkan timestamp
+      
       api.get(`/reviews/me?t=${new Date().getTime()}`), 
     ])
 
@@ -66,7 +63,7 @@ const loadAll = async () => {
     myReviews.value = Array.isArray(revRaw?.data) ? revRaw.data : revRaw
   } catch (e) {
     console.error(e)
-    error.value = e?.response?.data?.message || 'Gagal memuat data review.'
+    error.value = e?.response?.data?.message || 'Failed to load review data.'
   } finally {
     loading.value = false
   }
@@ -74,7 +71,6 @@ const loadAll = async () => {
 
 const reloadReviews = async () => {
   try {
-    // ✅ Tambahkan timestamp
     const res = await api.get(`/reviews/me?t=${new Date().getTime()}`)
     const raw = res.data?.data ?? res.data
     myReviews.value = Array.isArray(raw?.data) ? raw.data : raw
@@ -83,14 +79,12 @@ const reloadReviews = async () => {
   }
 }
 
-// set berisi product_id yang sudah ada review
 const reviewedProductIds = computed(() => {
   const set = new Set()
   myReviews.value.forEach((r) => set.add(r.product_id))
   return set
 })
 
-// produk dari order completed yang belum direview
 const needReview = computed(() => {
   const result = []
 
@@ -113,10 +107,8 @@ const needReview = computed(() => {
   return result
 })
 
-// daftar review yg sudah dikirim
 const reviewedList = computed(() => myReviews.value)
 
-// helper bintang
 const stars = [1, 2, 3, 4, 5]
 
 const submitReview = async (productId) => {
@@ -124,7 +116,7 @@ const submitReview = async (productId) => {
   const rating = ratingDrafts.value[productId] || 0
 
   if (!text && !rating) {
-    alert("Mohon isi bintang atau teks review.");
+    alert("Please fill in the stars or review text.");
     return;
   }
 
@@ -133,31 +125,26 @@ const submitReview = async (productId) => {
   error.value = ''
 
   try {
-    // 1. Tangkap response
     const res = await api.post('/reviews', {
       product_id: productId,
       review_text: text || null,
       rating: rating || null,
     })
 
-    // 2. Ambil data hasil AI
     const newReviewData = res.data.data || res.data
 
-    // 3. Masukkan ke list lokal (agar pindah ke Riwayat scr real-time)
     if (newReviewData) {
         myReviews.value.unshift(newReviewData)
     }
 
-    // Reset Form
     drafts.value[productId] = ''
     ratingDrafts.value[productId] = 0
     
-    // (Opsional) Sync background
     setTimeout(() => reloadReviews(), 1000)
 
   } catch (e) {
     console.error(e)
-    alert(e?.response?.data?.message || 'Gagal mengirim review.')
+    alert(e?.response?.data?.message || 'Failed to submit review.')
   } finally {
     submitting.value = false
     savingId.value = null
@@ -182,7 +169,7 @@ const saveEdit = async () => {
   const rating = editRating.value || 0
   
   if (!text && !rating) {
-      alert("Review tidak boleh kosong total.");
+      alert("Reviews cannot be completely empty.");
       return;
   }
 
@@ -190,34 +177,28 @@ const saveEdit = async () => {
   error.value = ''
 
   try {
-    // 1. Tangkap response
     const res = await api.put(`/reviews/${editId.value}`, {
       review_text: text || null,
       rating: rating || null,
     })
     
-    // 2. Ambil Data Final dari AI
     const aiResult = res.data.data || res.data 
 
-    // 3. Update Tampilan Secara Langsung (Tanpa Reload)
     const targetIndex = myReviews.value.findIndex(r => r.review_id === editId.value)
     
     if (targetIndex !== -1 && aiResult) {
-       // Timpa data lama dengan data baru dari AI
        myReviews.value[targetIndex] = aiResult
     }
 
-    // Reset state
     editId.value = null
     editDraft.value = ''
     editRating.value = 0
     
-    // (Opsional) Sync background
     setTimeout(() => reloadReviews(), 1000)
 
   } catch (e) {
     console.error(e)
-    alert(e?.response?.data?.message || 'Gagal menyimpan perubahan.')
+    alert(e?.response?.data?.message || 'Failed to save changes.')
   } finally {
     submitting.value = false
   }
@@ -233,20 +214,18 @@ const getSentimentBadge = (sentiment) => {
 }
 
 const deleteReview = async (rev) => {
-  if (!confirm(`Apakah Anda yakin ingin menghapus ulasan untuk "${rev.product?.product_name}"?`)) {
+  if (!confirm(`Are you sure you want to delete the review for"${rev.product?.product_name}"?`)) {
     return;
   }
 
   try {
     await api.delete(`/reviews/${rev.review_id}`)
     
-    // Refresh data agar ulasan hilang dari daftar "Riwayat" 
-    // dan kembali muncul di daftar "Menunggu Ulasan"
     await reloadReviews()
     
   } catch (e) {
     console.error(e)
-    alert(e?.response?.data?.message || 'Gagal menghapus ulasan.')
+    alert(e?.response?.data?.message || 'Failed to delete review.')
   }
 }
 
@@ -265,13 +244,13 @@ onMounted(loadAll)
           <span class="text-gray-300">/</span>
           <span class="font-semibold text-black">My Reviews</span>
         </nav>
-        <h1 class="text-3xl font-black tracking-tight text-gray-900">Ulasan Saya</h1>
-        <p class="text-gray-500 mt-1">Kelola ulasan untuk produk yang telah Anda beli.</p>
+        <h1 class="text-3xl font-black tracking-tight text-gray-900">My Reviews</h1>
+        <p class="text-gray-500 mt-1">Manage reviews for products you've purchased.</p>
       </div>
 
       <div v-if="loading" class="flex flex-col items-center justify-center py-20">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
-        <p class="mt-4 text-sm text-gray-500">Memuat data ulasan...</p>
+        <p class="mt-4 text-sm text-gray-500">Loading review data...</p>
       </div>
 
       <div v-else-if="error" class="mb-6 p-4 rounded-xl bg-red-50 border border-red-100 flex items-center gap-3 text-red-700">
@@ -283,12 +262,12 @@ onMounted(loadAll)
         
         <section>
           <div class="flex items-center justify-between mb-4">
-            <h2 class="text-xl font-bold text-gray-900">Menunggu Ulasan</h2>
+            <h2 class="text-xl font-bold text-gray-900">Waiting for Review</h2>
             <span class="bg-black text-white text-xs font-bold px-2 py-1 rounded-md">{{ needReview.length }}</span>
           </div>
 
           <div v-if="!needReview.length" class="bg-white border border-dashed border-gray-300 rounded-2xl p-10 text-center">
-            <p class="text-gray-500 text-sm">Tidak ada produk yang perlu diulas saat ini.</p>
+            <p class="text-gray-500 text-sm">No products waiting for review at the moment.</p>
           </div>
 
           <div v-else class="grid gap-6">
@@ -339,13 +318,13 @@ onMounted(loadAll)
                     v-model="drafts[item.product.product_id]"
                     rows="3"
                     class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:bg-white focus:border-black focus:ring-1 focus:ring-black transition-all resize-none mb-3"
-                    placeholder="Ceritakan pengalaman Anda menggunakan produk ini..."
+                    placeholder="Tell us about your experience using this product..."
                   ></textarea>
 
                   <div class="flex items-center justify-between">
                     <p class="text-xs text-gray-400 flex items-center gap-1">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3 h-3"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
-                      Minimal 5 karakter.
+                      Minimum 5 characters.
                     </p>
                     <button
                       type="button"
@@ -353,7 +332,7 @@ onMounted(loadAll)
                       :disabled="submitting || (!drafts[item.product.product_id] && !ratingDrafts[item.product.product_id])"
                       class="bg-black text-white px-6 py-2.5 rounded-full text-xs font-bold hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow active:scale-95"
                     >
-                      {{ savingId === item.product.product_id && submitting ? 'Mengirim...' : 'Kirim Ulasan' }}
+                      {{ savingId === item.product.product_id && submitting ? 'Sending...' : 'Send Review' }}
                     </button>
                   </div>
                 </div>
@@ -364,12 +343,12 @@ onMounted(loadAll)
 
         <section>
           <div class="flex items-center justify-between mb-4">
-            <h2 class="text-xl font-bold text-gray-900">Riwayat Ulasan</h2>
+            <h2 class="text-xl font-bold text-gray-900">Review History</h2>
             <span class="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-1 rounded-md">{{ reviewedList.length }}</span>
           </div>
 
           <div v-if="!reviewedList.length" class="bg-white border border-dashed border-gray-300 rounded-2xl p-10 text-center">
-            <p class="text-gray-500 text-sm">Belum ada ulasan yang Anda berikan.</p>
+            <p class="text-gray-500 text-sm">No reviews have been submitted yet.</p>
           </div>
 
           <div v-else class="grid gap-4">
@@ -389,7 +368,7 @@ onMounted(loadAll)
               <div class="flex-1 min-w-0">
                 <div class="flex justify-between items-start mb-2">
                   <div>
-                    <h3 class="font-bold text-gray-900 text-sm truncate pr-4">{{ rev.product?.product_name || 'Produk Tidak Dikenal' }}</h3>
+                    <h3 class="font-bold text-gray-900 text-sm truncate pr-4">{{ rev.product?.product_name || 'Unknown Product' }}</h3>
                     <p class="text-xs text-gray-400">{{ formatDateTime(rev.created_at) }}</p>
 
                     <span 
@@ -412,7 +391,7 @@ onMounted(loadAll)
                     @click="deleteReview(rev)"
                     class="text-xs font-bold text-red-500 hover:text-red-700 hover:underline"
                   >
-                    Hapus
+                    Delete
                   </button>
                 </div>
 
@@ -452,7 +431,7 @@ onMounted(loadAll)
                       :disabled="submitting || !editDraft.trim()"
                       class="px-4 py-2 text-xs font-bold text-white bg-black hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50"
                     >
-                      {{ submitting ? 'Menyimpan...' : 'Simpan Perubahan' }}
+                      {{ submitting ? 'Saving...' : 'Save Changes' }}
                     </button>
                   </div>
                 </div>

@@ -14,26 +14,23 @@ const password = ref('')
 const loading = ref(false)
 const error = ref('')
 
-// URL Backend untuk Google Login (Sesuaikan dengan route Laravel Anda)
 const GOOGLE_AUTH_URL = 'http://localhost:8000/auth/google/redirect' 
 
 const submit = async () => {
   error.value = ''
   loading.value = true
   try {
-    // Fungsi register dari store auth
     await auth.register(name.value, email.value, password.value)
-    // Jika sukses, redirect ke login
+    
     r.push('/login')
   } catch (e) {
-    error.value = e?.response?.data?.message || 'Registrasi gagal. Silakan coba lagi.'
+    error.value = e?.response?.data?.message || 'Registration failed. Please try again.'
   } finally {
     loading.value = false
   }
 }
 
 const signUpWithGoogle = () => {
-  // Redirect browser ke endpoint Google di Backend
   window.location.href = GOOGLE_AUTH_URL
 }
 </script>
@@ -126,7 +123,7 @@ const signUpWithGoogle = () => {
 
               <div class="relative flex py-2 items-center">
                 <div class="flex-grow border-t border-gray-200"></div>
-                <span class="flex-shrink-0 mx-4 text-gray-400 text-xs uppercase font-bold">Or continue with</span>
+                <span class="flex-shrink-0 mx-4 text-gray-400 text-xs uppercase font-bold">Or</span>
                 <div class="flex-grow border-t border-gray-200"></div>
               </div>
 

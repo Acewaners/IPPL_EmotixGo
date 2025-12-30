@@ -6,18 +6,15 @@ import { useCartStore } from '../stores/cart'
 import { useRouter, RouterLink } from 'vue-router'
 import { XMarkIcon, TrashIcon, ArrowRightIcon } from '@heroicons/vue/24/outline'
 
-// base url gambar Laravel (wajib)
 const STORAGE_BASE = import.meta.env.VITE_STORAGE_BASE || 'http://localhost:8000/storage'
 
 const imageUrl = (product) => {
-  if (!product || !product.image) return '/dummy-qr.png' // Gambar default jika kosong
+  if (!product || !product.image) return '/dummy-qr.png' 
   
-  // Jika sudah berupa link lengkap (Cloudinary), langsung gunakan
   if (product.image.startsWith('http')) {
     return product.image
   }
   
-  // Jika path lokal, tambahkan prefix storage
   return `${STORAGE_BASE}/${product.image}`
 }
 
@@ -27,7 +24,7 @@ const r = useRouter()
 
 const items = computed(() => cart.cartItems)
 const subtotal = computed(() => cart.cartSubtotal)
-const shipping = computed(() => 0) // contoh: gratis
+const shipping = computed(() => 0) 
 const total = computed(() => subtotal.value + shipping.value)
 
 const formatPrice = (price) =>

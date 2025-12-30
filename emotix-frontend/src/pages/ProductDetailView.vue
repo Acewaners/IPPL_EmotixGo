@@ -19,7 +19,6 @@ const error = ref('')
 const product = ref(null)
 const quantity = ref(1)
 
-// 🔹 STATE REVIEW
 const reviews = ref([])
 const reviewMeta = ref({
   count: 0,
@@ -30,7 +29,6 @@ const reviewMeta = ref({
 const reviewsLoading = ref(false)
 const reviewsError = ref('')
 
-// base url gambar
 const STORAGE_BASE =
   import.meta.env?.VITE_STORAGE_BASE ?? 'http://localhost:8000/storage'
 
@@ -52,16 +50,15 @@ const galleryImages = computed(() => {
 const selectedImage = ref('')
 
 const deleteReview = async (rev) => {
-  if (!confirm('Apakah Anda yakin ingin menghapus ulasan ini?')) return
+  if (!confirm('Are you sure you want to delete this review?')) return
 
   try {
     await api.delete(`/reviews/${rev.review_id}`)
     
-    // Reload review agar hilang dari daftar
     await loadReviews(product.value.product_id)
     
   } catch (e) {
-    alert(e.response?.data?.message || 'Gagal menghapus review')
+    alert(e.response?.data?.message || 'Failed to delete review')
   }
 }
 
@@ -87,7 +84,6 @@ const getSentimentBadge = (sentiment) => {
   }
 }
 
-// 🔹 ambil review per produk
 const loadReviews = async (productId) => {
   reviewsLoading.value = true
   reviewsError.value = ''
@@ -103,7 +99,7 @@ const loadReviews = async (productId) => {
   } catch (e) {
     console.error(e)
     reviewsError.value =
-      e?.response?.data?.message || 'Gagal memuat review.'
+      e?.response?.data?.message || 'Failed to load reviews.'
   } finally {
     reviewsLoading.value = false
   }
@@ -124,18 +120,17 @@ onMounted(async () => {
     )
 
     if (!found) {
-      error.value = 'Produk tidak ditemukan.'
+      error.value = 'Product not found.'
     } else {
       product.value = found
       selectedImage.value = fullImage.value
 
-      // setelah produk ketemu, baru load review
       await loadReviews(found.product_id)
     }
   } catch (e) {
     console.error(e)
     error.value =
-      e?.response?.data?.message || 'Gagal memuat detail produk.'
+      e?.response?.data?.message || 'Failed to load product details.'
   } finally {
     loading.value = false
   }
@@ -176,7 +171,6 @@ const addToCart = () => {
   cart.addToCart(product.value, quantity.value)
 }
 
-// Buy Now: tambah ke cart lalu ke halaman cart
 const buyNow = () => {
   if (!product.value) return
   if (Number(product.value.stock || 0) <= 0) return
@@ -192,7 +186,6 @@ const inStock = computed(
   () => Number(product.value?.stock || 0) > 0
 )
 
-// 🔹 computed rating & sentiment (untuk tampilan)
 const avgRating = computed(() =>
   reviewMeta.value && typeof reviewMeta.value.avg_rating === 'number'
     ? reviewMeta.value.avg_rating
@@ -221,26 +214,23 @@ const sentimentPercent = computed(() => {
 
 const newReview = ref({
   text: '',
-  rating: null // Default null agar AI yang bekerja jika user tidak isi
+  rating: null 
 })
 const isSubmitting = ref(false)
 const submitError = ref('')
 
 // --- 2. Fungsi Submit Review ---
 const submitReview = async () => {
-  // Ambil nilai saat ini
   const text = newReview.value.text ? newReview.value.text.trim() : '';
   const rating = newReview.value.rating;
 
-  // 1. Validasi: Salah satu wajib ada
   if (!text && !rating) {
-    submitError.value = 'Mohon berikan Bintang ATAU tulis Ulasan.';
+    submitError.value = 'Please provide a Star OR write a Review.';
     return;
   }
 
-  // (Opsional) Jika menulis teks, minimal 5 karakter agar bermakna
   if (text && text.length < 5) {
-    submitError.value = 'Ulasan teks minimal 5 karakter.';
+    submitError.value = 'Review text must be at least 5 characters long.';
     return;
   }
 
@@ -248,7 +238,6 @@ const submitReview = async () => {
   submitError.value = ''
 
   try {
-    // 2. Kirim ke Backend (Kirim null jika kosong)
     const res = await api.post('/reviews', {
       product_id: product.value.product_id,
       review_text: text || null, 
@@ -264,7 +253,6 @@ const submitReview = async () => {
         
         if (reviewMeta.value) reviewMeta.value.count++;
     }
-    // Reset form
     newReview.value.text = ''
     newReview.value.rating = null
     
@@ -272,11 +260,10 @@ const submitReview = async () => {
         loadReviews(product.value.product_id)
     }, 1000)
 
-    // Reload list
     await loadReviews(product.value.product_id)
     
   } catch (e) {
-    submitError.value = e.response?.data?.message || 'Gagal mengirim review.'
+    submitError.value = e.response?.data?.message || 'Failed to submit review.'
   } finally {
     isSubmitting.value = false
   }
@@ -301,17 +288,17 @@ const submitReview = async () => {
 
         <div v-if="loading" class="flex flex-col items-center justify-center py-32 space-y-4">
           <div class="w-10 h-10 border-4 border-gray-200 border-t-black rounded-full animate-spin"></div>
-          <p class="text-gray-500 text-sm">Memuat detail produk...</p>
+          <p class="text-gray-500 text-sm">Loading product details...</p>
         </div>
 
         <div v-else-if="error" class="py-32 text-center">
           <div class="inline-flex bg-red-50 p-4 rounded-full mb-4">
             <XCircleIcon class="w-8 h-8 text-red-500" />
           </div>
-          <h3 class="text-lg font-bold text-gray-900">Produk Tidak Ditemukan</h3>
+          <h3 class="text-lg font-bold text-gray-900">Product not found</h3>
           <p class="text-gray-500 mt-1 mb-6">{{ error }}</p>
           <RouterLink to="/" class="px-6 py-2 bg-black text-white rounded-full text-sm font-medium hover:bg-gray-800">
-            Kembali ke Home
+            Back to Home
           </RouterLink>
         </div>
 
@@ -330,9 +317,9 @@ const submitReview = async () => {
             </div>
 
             <div class="hidden lg:block pt-8 border-t border-gray-100">
-              <h3 class="text-lg font-bold text-gray-900 mb-4">Deskripsi Produk</h3>
+              <h3 class="text-lg font-bold text-gray-900 mb-4">Product Description</h3>
               <div class="prose prose-sm text-gray-600 max-w-none whitespace-pre-line leading-relaxed">
-                {{ product.description || 'Tidak ada deskripsi tersedia.' }}
+                {{ product.description || 'No description available.' }}
               </div>
             </div>
           </div>
@@ -461,7 +448,7 @@ const submitReview = async () => {
             <div class="pt-8 border-t border-gray-100 space-y-8">
               
               <div class="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-                <h3 class="font-bold text-gray-900 mb-4">Tulis Ulasan</h3>
+                <h3 class="font-bold text-gray-900 mb-4">Write a Review</h3>
                 
                 <div class="flex items-center gap-2 mb-4">
                   <span class="text-xs font-bold text-gray-500 uppercase tracking-wide">Rating</span>
@@ -503,7 +490,7 @@ const submitReview = async () => {
                   :disabled="isSubmitting || (!newReview.text && !newReview.rating)"
                   class="w-full bg-black text-white text-sm font-bold py-3 rounded-xl hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
-                  {{ isSubmitting ? 'Mengirim...' : 'Kirim Review' }}
+                  {{ isSubmitting ? 'Submitting...' : 'Submit Review' }}
                 </button>
               </div>
 
@@ -547,7 +534,7 @@ const submitReview = async () => {
                   </div>
                 </div>
                 <p class="text-[10px] text-gray-400 italic text-center mt-2">
-                  *Analisis sentimen dihasilkan otomatis oleh AI berdasarkan ulasan pengguna.
+                  *Sentiment analysis is generated automatically by AI based on user reviews.
                 </p>
               </div>
 
@@ -562,7 +549,7 @@ const submitReview = async () => {
                 </div>
 
                 <div v-else-if="!reviews.length" class="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                  <p class="text-sm text-gray-500">Belum ada ulasan. Jadilah yang pertama memberikan review!</p>
+                  <p class="text-sm text-gray-500">No reviews yet. Be the first to review!</p>
                 </div>
 
                 <div v-else class="space-y-4">
@@ -605,7 +592,7 @@ const submitReview = async () => {
                         class="text-xs font-bold text-gray-400 hover:text-red-600 transition-colors"
                         title="Hapus Ulasan Anda"
                       >
-                        <TrashIcon class="w-4 h-4" /> Hapus
+                        <TrashIcon class="w-4 h-4" /> Delete
                       </button>
                     </div>
                     

@@ -20,53 +20,44 @@ class TransactionController extends Controller
 
         return DB::transaction(function() use ($r,$data){
             $total = 0; $details = [];
-            
-            // 1. Hitung Total & Stok
+
             foreach($data['items'] as $it){
                 $p = Product::lockForUpdate()->findOrFail($it['product_id']);
                 abort_if($p->stock < $it['quantity'], 422, 'Stock not enough');
-                
+
                 $sub = $p->price * $it['quantity'];
                 $total += $sub;
                 $p->decrement('stock',$it['quantity']);
                 $details[] = ['product_id'=>$p->product_id,'quantity'=>$it['quantity'],'subtotal'=>$sub];
             }
 
-            // 2. Buat Transaksi (State Awal: PROCESSING)
             $trx = Transaction::create([
                 'buyer_id'    => $r->user()->user_id,
                 'seller_id'   => $data['seller_id'],
                 'total_price' => $total,
-                
-                // ✅ UBAH DISINI: Langsung 'processing' (Lewati pending_payment)
-                'status'           => 'processing', 
-                
-                // Pastikan ini juga ada (Perbaikan Tanggal dari langkah sebelumnya)
-                'transaction_date' => now(), 
+                'status'           => 'processing',
+                'transaction_date' => now(),
                 'created_at'       => now(),
             ]);
 
-            // 3. Simpan Detail Item
             foreach($details as $d){
                 TransactionDetail::create(['transaction_id'=>$trx->transaction_id] + $d);
             }
-            
+
             return $trx->load('details.product');
         });
     }
 
     public function indexBuyer(Request $r){
         return Transaction::where('buyer_id',$r->user()->user_id)
-            // Tambahkan 'seller' jika ingin menampilkan nama toko
-            ->with(['details.product', 'seller']) 
+            ->with(['details.product', 'seller'])
             ->latest('transaction_date')
             ->paginate(10);
     }
 
     public function indexSeller(Request $r){
         return Transaction::where('seller_id',$r->user()->user_id)
-            // ✅ PERBAIKAN: Tambahkan 'buyer' disini
-            ->with(['details.product', 'buyer']) 
+            ->with(['details.product', 'buyer'])
             ->latest('transaction_date')
             ->paginate(10);
     }
@@ -85,7 +76,7 @@ class TransactionController extends Controller
 
         $isSeller = $userId === $transaction->seller_id;
         $isBuyer  = $userId === $transaction->buyer_id;
-        $isAdmin  = ($user->role === 'admin') || ($user->is_admin == 1); 
+        $isAdmin  = ($user->role === 'admin') || ($user->is_admin == 1);
 
         abort_unless($isSeller || $isBuyer || $isAdmin, 403);
 
@@ -94,30 +85,24 @@ class TransactionController extends Controller
 
         // --- LOGIKA UTAMA PERBAIKAN ---
         if ($isBuyer && !$isAdmin) {
-            
-            // 1. Jika Buyer ingin 'processing' (Bayar)
+
             if ($requestedStatus === 'processing') {
-                // Izinkan jika statusnya 'pending_payment' ATAU sudah 'processing' (biar tidak error)
                 if (in_array($transaction->status, ['pending_payment', 'processing'])) {
                     $transaction->update(['status' => 'processing']);
                     return $transaction->load(['details.product', 'buyer']);
                 }
-            } 
-            // 2. Jika Buyer ingin 'completed' (Terima Barang)
+            }
             elseif ($requestedStatus === 'completed') {
                 $transaction->update(['status' => 'completed']);
-            } 
+            }
             else {
                 abort(403, 'Buyer can only pay (processing) or mark as completed.');
             }
 
         } else {
-            // Seller/Admin bebas
             $transaction->update($r->only('status', 'tracking_number'));
         }
-        // -----------------------------
 
-        // Logika Tambah "Sold" (Terjual)
         if ($oldStatus !== 'completed' && $transaction->status === 'completed') {
             $transaction->loadMissing('details.product');
             foreach ($transaction->details as $detail) {
@@ -132,7 +117,6 @@ class TransactionController extends Controller
 
     public function show(Request $r, Transaction $transaction)
     {
-        // buyer ATAU seller boleh lihat
         abort_unless(
             $r->user()->user_id === $transaction->buyer_id ||
             $r->user()->user_id === $transaction->seller_id,

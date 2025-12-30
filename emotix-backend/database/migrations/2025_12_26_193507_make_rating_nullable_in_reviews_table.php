@@ -12,7 +12,6 @@ return new class extends Migration
     public function up()
     {
         Schema::table('reviews', function (Blueprint $table) {
-            // Kita ubah kolom rating agar boleh kosong (null)
             $table->integer('rating')->nullable()->change();
         });
     }
@@ -20,7 +19,6 @@ return new class extends Migration
     public function down()
     {
         Schema::table('reviews', function (Blueprint $table) {
-            // Kembalikan ke wajib isi jika rollback
             $table->integer('rating')->nullable(false)->change();
         });
     }

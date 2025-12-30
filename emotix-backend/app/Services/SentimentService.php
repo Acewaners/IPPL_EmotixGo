@@ -12,7 +12,6 @@ class SentimentService
         $text = trim((string) $text);
         if ($text === '') return null;
 
-        // 1. COBA PANGGIL AI ASLI (Hugging Face)
         $aiResult = $this->callHuggingFace($text);
 
         if ($aiResult) {
@@ -20,7 +19,7 @@ class SentimentService
             return $aiResult;
         }
 
-        
+
         Log::warning("⚠️ AI Down/Error, menggunakan Fallback Manual untuk: " . $text);
         return $this->localFallbackAnalysis($text);
     }
@@ -44,15 +43,14 @@ class SentimentService
             if ($response->successful()) {
                 $data = $response->json();
                 $preds = (isset($data[0]) && is_array($data[0])) ? $data[0] : $data;
-                
+
                 if (isset($preds[0]['label'])) {
                     usort($preds, fn($a, $b) => ($b['score'] ?? 0) <=> ($a['score'] ?? 0));
-                    
-                    // Kita kirim teks aslinya juga untuk analisa keyword
+
                     return $this->convertLabelToStars($preds[0]['label'], $preds[0]['score'], $text);
                 }
-            } 
-            
+            }
+
             Log::error("HF API Fail Status: " . $response->status() . " Body: " . $response->body());
 
         } catch (\Throwable $e) {
@@ -67,15 +65,15 @@ class SentimentService
         $label = strtolower($label);
         $score = (float) $score;
         $textLower = strtolower($text);
-        
-        $stars = 3; 
+
+        $stars = 3;
         $sentiment = 'neutral';
 
-        // --- 1. LOGIKA AI DASAR (Tetap sama seperti sebelumnya) ---
+        // --- 1. LOGIKA AI DASAR ---
 
         if (in_array($label, ['positive', 'label_2', 'pos'])) {
             $sentiment = 'positive';
-            if ($score >= 0.990) { 
+            if ($score >= 0.990) {
                 $stars = 5;
             } elseif ($score >= 0.80) {
                 $stars = 4;
@@ -87,22 +85,23 @@ class SentimentService
             if ($score >= 0.995) {
                 $stars = 1;
             } else {
-                $stars = 2; 
+                $stars = 2;
             }
         } else {
             $stars = 3;
             $sentiment = 'neutral';
         }
 
-        // --- 2. LOGIKA KEYWORD (RULE-BASED CORRECTION) ---
-        
-        $originalStars = $stars; // Simpan untuk log perbandingan
+        // --- 2. LOGIKA KEYWORD ---
+
+        $originalStars = $stars;
 
         $downgradeWords = [
+        // 1. KATA SANGGAHAN
             // Baku
-            'tapi', 'cuma', 'hanya', 'agak', 'sayang', 'kurang', 'sedikit', 
+            'tapi', 'cuma', 'hanya', 'agak', 'sayang', 'kurang', 'sedikit', 'rada',
             // Gaul / Singkatan
-            'doang', 'aja sih', 'cuman', 'kekurangannya', 'rada', 'b aja', 
+            'doang', 'aja sih', 'cuman', 'kekurangannya', 'rada', 'b aja',
             'tpi', 'cm', 'kirain', 'sayangnya', 'pengiriman lama', 'kureng'
         ];
 
@@ -117,19 +116,19 @@ class SentimentService
         // 3. KATA BIASA AJA (Standard)
         $neutralWords = [
             // Baku
-            'biasa saja', 'standar', 'sesuai harga', 'cukup', 'lumayan', 
+            'biasa saja', 'standar', 'sesuai harga', 'cukup', 'lumayan',
             // Gaul
-            'b aja', 'biasa aja', 'so so', 'not bad', 'oke lah', 
+            'b aja', 'biasa aja', 'so so', 'not bad', 'oke lah',
             'bolehlah', 'sesuai ekspektasi', 'oke aja', 'mayan', 'standar aja'
         ];
 
         // 4. KATA FATAL (Hate Speech/Scam)
         $fatalWords = [
             // Baku
-            'penipu', 'rusak', 'hancur', 'pecah', 'tidak berfungsi', 'palsu', 
+            'penipu', 'rusak', 'hancur', 'pecah', 'tidak berfungsi', 'palsu',
             'kecewa berat', 'buang uang', 'tidak sesuai', 'barang bekas',
             // Gaul
-            'zonk', 'nyesel', 'kapok', 'parah', 'ancur', 'balikin duit', 
+            'zonk', 'nyesel', 'kapok', 'parah', 'ancur', 'balikin duit',
             'rugi', 'scam', 'abal-abal', 'sampah', 'gak guna', 'jelek banget', 'ga guna'
         ];
 
@@ -137,56 +136,47 @@ class SentimentService
         $boosterWords = [
             // Baku
             'pesan lagi', 'beli lagi', 'order lagi', 'sangat puas', 'terbaik', 'memuaskan',
-            'rekomendasi', 'recommended', 'langganan', 'puas banget', 
+            'rekomendasi', 'recommended', 'langganan', 'puas banget',
             // Gaul
-            'bakal beli lagi', 'mantul', 'mantap', 'gokil', 'keren abis', 'the best', 
-            'juara', 'top markotop', 'nagih', 'gapernah nyesel', 'worth it', 
+            'bakal beli lagi', 'mantul', 'mantap', 'gokil', 'keren abis', 'the best',
+            'juara', 'top markotop', 'nagih', 'gapernah nyesel', 'worth it',
             'pasti beli lagi', 'next order', 'repeat order', 'ga nyesel'
         ];
 
         if ($stars == 5) {
-            // ✅ FIX: Sekarang menggunakan variabel $downgradeWords
             if ($this->containsAny($textLower, $downgradeWords)) {
                 $stars = 4;
                 Log::info("Rule Applied: Downgrade 5->4 karena ada kata sanggahan.");
             }
         }
 
-        // ATURAN B: Penetral (Barang belum dicoba -> Paksa 3)
         if ($this->containsAny($textLower, $pendingWords)) {
             $stars = 3;
             $sentiment = 'neutral';
             Log::info("Rule Applied: Force Neutral karena barang belum dicoba.");
         }
 
-        // ATURAN C: Biasa Aja (Jika >3 tapi bilangnya biasa aja -> Turun ke 3)
         if ($stars > 3 && $this->containsAny($textLower, $neutralWords)) {
             $stars = 3;
             Log::info("Rule Applied: Downgrade ke 3 karena 'Biasa aja'.");
         }
 
-        // ATURAN D: Hate Speech/Scam (Force 1 Star)
         if ($stars > 1 && $this->containsAny($textLower, $fatalWords)) {
             $stars = 1;
             $sentiment = 'negative';
             Log::info("Rule Applied: Force 1 Star karena indikator fatal.");
         }
 
-        // ATURAN E: Booster Positif (Force Naik Rating)
-        // Ini diletakkan TERAKHIR supaya bisa menyelamatkan rating yang salah dideteksi AI
         if ($this->containsAny($textLower, $boosterWords)) {
-            // Jika user bilang "beli lagi" tapi rating < 4, naikkan ke 4
-            // Kecuali jika sudah kena rule Fatal (bintang 1), kita biarkan dulu (opsional)
-            if ($stars < 4 && $stars > 1) { 
+            if ($stars < 4 && $stars > 1) {
                 $stars = 4;
                 $sentiment = 'positive';
                 Log::info("Rule Applied: Booster ke 4 karena indikasi retensi/kepuasan tinggi.");
             }
-            // Jika tadinya 1 (fatal) tapi ada kata beli lagi? (Jarang terjadi, anggap anomali)
-             elseif ($stars == 1) {
+                elseif ($stars == 1) {
                  // Opsional: Bisa dibiarkan 1, atau dinaikkan jika Anda mau lebih forgiving
-                 // $stars = 3; 
-             }
+                 // $stars = 3;
+            }
         }
 
         Log::info("Tuning V4 Result -> Label: $label | Score: $score | Base Stars: $originalStars | Final Stars: $stars");
@@ -202,7 +192,6 @@ class SentimentService
     // --- FITUR CADANGAN (Hanya jalan jika AI mati) ---
     private function localFallbackAnalysis(string $text): array
     {
-        // ... kode fallback lama Anda ...
         return ['stars' => 3, 'label' => 'neutral', 'score' => 0, 'raw' => 'fallback'];
     }
 

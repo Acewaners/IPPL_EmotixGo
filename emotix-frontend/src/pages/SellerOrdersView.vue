@@ -10,7 +10,6 @@ const error = ref('')
 
 const selectedOrder = ref(null)
 
-// base url gambar (sama seperti yang lain)
 const STORAGE_BASE =
   import.meta.env?.VITE_STORAGE_BASE ?? 'http://localhost:8000/storage'
 
@@ -64,10 +63,10 @@ async function updateStatus(order, newStatus) {
     await api.put(`/seller/orders/${order.transaction_id}/status`, {
       status: newStatus
     })
-    order.status = newStatus // Update di layar jika sukses
+    order.status = newStatus 
   } catch (e) {
-    order.status = oldStatus // Kembalikan jika gagal
-    alert(e.response?.data?.message || 'Gagal mengubah status')
+    order.status = oldStatus 
+    alert(e.response?.data?.message || 'Failed to change status')
   } finally {
     loadingStatus.value = null
   }
@@ -77,9 +76,7 @@ const loadOrders = async () => {
   loading.value = true
   error.value = ''
   try {
-    // sesuaikan dengan route backend kamu
     const res = await api.get('/seller/orders')
-    // bisa jadi {data: {data: []}} atau {data: []}
     const raw = res.data?.data ?? res.data
     orders.value = Array.isArray(raw?.data) ? raw.data : raw
     if (orders.value.length) {
@@ -343,7 +340,7 @@ onMounted(loadOrders)
                 </div>
               </div>
 
-           </div>
+            </div>
         </div>
 
       </section>

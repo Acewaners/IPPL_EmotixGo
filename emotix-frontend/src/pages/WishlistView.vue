@@ -4,26 +4,23 @@ import { useRouter } from 'vue-router'
 import Navbar from '../components/Navbar.vue'
 import Footer from '../components/Footer.vue'
 import { useCartStore } from '../stores/cart'
-// Import icon yang dibutuhkan
 import { TrashIcon, ShoppingBagIcon, HeartIcon } from '@heroicons/vue/24/outline'
 
 const cart = useCartStore()
 const router = useRouter()
 
-// Data Wishlist dari Store
 const wishlist = computed(() => cart.wishlist)
 
 // Helper URL Gambar
 const STORAGE_BASE = import.meta.env.VITE_STORAGE_BASE ?? 'http://localhost:8000/storage'
 
 const imageUrl = (p) => {
-  if (!p || !p.image) return '/placeholder-product.png' // Gambar default jika kosong
+  if (!p || !p.image) return '/placeholder-product.png' 
   if (p.image_full) return p.image_full
   if (p.image.startsWith('http')) return p.image
   return `${STORAGE_BASE}/${p.image}`
 }
 
-// Actions
 const moveAllToBag = () => {
   if (!wishlist.value.length) return
   cart.moveWishlistToCart()

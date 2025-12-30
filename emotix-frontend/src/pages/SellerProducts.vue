@@ -25,9 +25,9 @@ const isSaving = ref(false)
 
 const STORAGE_BASE = import.meta.env.VITE_STORAGE_BASE || 'http://localhost:8000/storage'
 const imgSrc = (path) => {
-  if (!path) return '/dummy-qr.png' // Gambar default jika kosong
-  if (path.startsWith('http')) return path // Jika URL lengkap (Cloudinary), pakai langsung
-  return `${STORAGE_BASE}/${path}` // Jika path lokal, tambahkan base URL
+  if (!path) return '/dummy-qr.png' 
+  if (path.startsWith('http')) return path 
+  return `${STORAGE_BASE}/${path}` 
 }
 
 onMounted(async () => {
@@ -38,15 +38,13 @@ onMounted(async () => {
 
 const getProductImage = (imagePath) => {
   if (!imagePath) {
-    return '/dummy-qr.png' // Gambar default jika kosong
+    return '/dummy-qr.png' 
   }
   
-  // Jika gambar sudah berupa link lengkap (Cloudinary/External), langsung pakai
   if (imagePath.startsWith('http')) {
     return imagePath
   }
   
-  // Jika gambar lokal (upload manual tanpa cloud), tambahkan prefix storage
   return `${STORAGE_BASE}/${imagePath}`
 }
 
@@ -59,7 +57,7 @@ async function loadCategories() {
       ? data
       : []
   } catch (e) {
-    console.error('Gagal memuat kategori:', e?.response?.data || e)
+    console.error('Failed to load category:', e?.response?.data || e)
     categories.value = []
   }
 }
@@ -78,7 +76,7 @@ async function loadProducts() {
       (a, b) => (b.product_id ?? 0) - (a.product_id ?? 0),
     )
   } catch (e) {
-    error.value = e?.response?.data?.message || 'Gagal memuat produk'
+    error.value = e?.response?.data?.message || 'Failed to load products'
   } finally {
     loading.value = false
   }
@@ -88,14 +86,12 @@ async function loadSellerOrders() {
   try {
     const { data } = await api.get('/seller/orders')
     
-    // 1. Ambil data mentah
     const rawOrders = Array.isArray(data?.data)
       ? data.data
       : Array.isArray(data)
       ? data
       : []
 
-    // 2. FILTER: Hanya ambil order yang produknya masih ada (tidak null)
     sellerOrders.value = rawOrders.filter(order => {
         const hasValidProduct = order.details?.some(detail => detail.product != null);
         
@@ -103,23 +99,20 @@ async function loadSellerOrders() {
     });
 
   } catch (e) {
-    console.error('Gagal memuat pesanan seller:', e?.response?.data || e)
+    console.error('Failed to load seller orders:', e?.response?.data || e)
     sellerOrders.value = []
   }
 }
 
 async function createProduct(payload) {
-  // 1. Validasi manual (tetap sama)
-  if (!payload.category_id) return alert('Kategori wajib dipilih')
-  if (!payload.product_name?.trim()) return alert('Nama produk wajib')
-  if (payload.price == null || Number(payload.price) < 0) return alert('Harga tidak valid')
-  if (payload.stock == null || Number(payload.stock) < 0) return alert('Stok tidak valid')
+  if (!payload.category_id) return alert('Category must be selected')
+  if (!payload.product_name?.trim()) return alert('Product name is mandatory')
+  if (payload.price == null || Number(payload.price) < 0) return alert('Invalid price')
+  if (payload.stock == null || Number(payload.stock) < 0) return alert('Invalid stock')
 
-  // 2. Set Loading ON
   isSaving.value = true 
 
   try {
-    // Logika simpan (tetap sama)
     if (!payload.image) {
       await api.post('/products', {
         category_id: Number(payload.category_id),
@@ -144,12 +137,9 @@ async function createProduct(payload) {
     openCreate.value = false
     await loadProducts()
     
-    // (Opsional) Jika pakai Toast, panggil disini: toast.success(...)
-    
   } catch (e) {
-    alert(e?.response?.data?.message || 'Gagal membuat produk')
+    alert(e?.response?.data?.message || 'Failed to create product')
   } finally {
-    // 3. Set Loading OFF (Wajib di finally agar tombol nyala lagi meski error)
     isSaving.value = false 
   }
 }
@@ -168,7 +158,6 @@ function startEdit(row) {
 }
 
 async function updateProduct(payload) {
-  // 1. Set Loading ON
   isSaving.value = true
 
   try {
@@ -188,20 +177,19 @@ async function updateProduct(payload) {
     openEdit.value = false
     await loadProducts()
   } catch (e) {
-    alert(e?.response?.data?.message || 'Gagal update produk')
+    alert(e?.response?.data?.message || 'Failed to update product')
   } finally {
-    // 2. Set Loading OFF
     isSaving.value = false 
   }
 }
 
 async function removeProduct(row) {
-  if (!confirm(`Hapus produk "${row.product_name}"?`)) return
+  if (!confirm(`Delete Product "${row.product_name}"?`)) return
   try {
     await api.delete(`/products/${row.product_id}`)
     await loadProducts()
   } catch (e) {
-    alert(e?.response?.data?.message || 'Gagal hapus produk')
+    alert(e?.response?.data?.message || 'Failed to delete product')
   }
 }
 
@@ -209,20 +197,16 @@ async function removeProduct(row) {
 
 const totalRevenue = computed(() =>
   sellerOrders.value.reduce((sum, o) => {
-    // Abaikan jika statusnya 'cancelled' atau 'pending_payment'
     if (['cancelled', 'pending_payment'].includes(o.status)) return sum
     
     return sum + Number(o.total_price ?? 0)
   }, 0)
 )
 
-// 2. Total Orders: Menghitung semua order masuk (termasuk yang batal tidak apa-apa untuk histori)
 const totalOrders = computed(() => sellerOrders.value.length)
 
-// 3. Total Products Sold: Hanya hitung item dari order yang VALID (sukses/proses)
 const totalProductsSold = computed(() =>
   sellerOrders.value.reduce((sum, o) => {
-    // Abaikan item dari order yang batal
     if (['cancelled', 'pending_payment'].includes(o.status)) return sum
 
     const details = Array.isArray(o.details) ? o.details : []
@@ -367,7 +351,7 @@ const activeProducts = computed(
                           alt="Product"
                         />
                         <div v-else class="w-full h-full bg-gray-100 flex items-center justify-center text-gray-300">
-                           <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
                         </div>
                       </div>
                       <div>

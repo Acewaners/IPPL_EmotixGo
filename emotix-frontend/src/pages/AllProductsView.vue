@@ -5,52 +5,37 @@ import Footer from '../components/Footer.vue'
 import ProductCard from '../components/ProductCard.vue'
 import { api } from '../lib/api'
 
-// STATE
 const products = ref([])
 const categories = ref([])
 const loading = ref(true)
-const selectedCategory = ref('All') // Default tampilkan semua
+const selectedCategory = ref('All') 
 
-// FETCH DATA
 const fetchData = async () => {
   loading.value = true
   try {
-    // 1. Ambil semua produk
-    // Asumsi endpoint backend adalah /products untuk mengambil semua barang
     const resProducts = await api.get('/products')
     products.value = resProducts.data.data || resProducts.data
 
-    // 2. Ambil kategori (opsional, jika ingin dinamis dari DB)
-    // Jika backend belum siap, kita bisa hardcode kategori di bawah
     const resCat = await api.get('/categories')
     categories.value = resCat.data.data || resCat.data
     
   } catch (error) {
-    console.error("Gagal mengambil data:", error)
+    console.error("Failed to retrieve data:", error)
   } finally {
     loading.value = false
   }
 }
 
-// FILTER LOGIC
 const filteredProducts = computed(() => {
   if (selectedCategory.value === 'All') {
     return products.value
   }
-  // Filter berdasarkan nama kategori
   return products.value.filter(product => {
-    // Pastikan product.category ada dan cocokkan namanya
     return product.category?.name?.toLowerCase() === selectedCategory.value.toLowerCase()
   })
 })
 
-// Kategori Manual (Sesuai request Anda: Handphone, Tablet, Laptop)
-// Kita gabungkan dengan opsi 'All'
 const filterOptions = computed(() => {
-  // Jika mau pakai data asli dari DB:
-  // return ['All', ...categories.value.map(c => c.name)]
-  
-  // Jika mau hardcode sesuai request:
   return ['All', 'Handphone', 'Tablet', 'Laptop']
 })
 
@@ -77,7 +62,7 @@ onMounted(() => {
             </span>
             <div class="flex items-center gap-3">
               <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">
-                Semua Produk
+                All Products
               </h1>
               <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200">
                 {{ filteredProducts.length }}
@@ -106,7 +91,7 @@ onMounted(() => {
       </div>
 
       <div v-if="loading" class="text-center py-20">
-        <p class="text-gray-500">Memuat produk...</p>
+        <p class="text-gray-500">Loading products...</p>
       </div>
 
       <div 
@@ -120,17 +105,17 @@ onMounted(() => {
         </div>
 
         <h3 class="text-xl font-bold text-gray-900 mb-2">
-          Produk tidak ditemukan
+          Product not found
         </h3>
         <p class="text-gray-500 max-w-md mx-auto mb-8">
-          Sepertinya kami belum memiliki stok untuk kategori <span class="font-semibold text-black">"{{ selectedCategory }}"</span> saat ini. Yuk, intip koleksi lainnya!
+          It seems we don't have any stock for the category <span class="font-semibold text-black">"{{ selectedCategory }}"</span> right now. Let's check out other collections!
         </p>
 
         <button 
           @click="selectedCategory = 'All'" 
           class="group flex items-center gap-2 px-6 py-3 bg-black text-white rounded-full font-medium transition-all hover:bg-gray-800 hover:shadow-lg hover:-translate-y-0.5"
         >
-          <span>Lihat Semua Produk</span>
+          <span>See All Products</span>
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 transition-transform group-hover:translate-x-1">
             <path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clip-rule="evenodd" />
           </svg>

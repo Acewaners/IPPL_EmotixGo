@@ -14,20 +14,17 @@ class ProductController extends Controller
     {
 
         $validated = $request->validate([
-            // ... rules lainnya ...
             'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
         $query = Product::with(['category', 'seller'])
-            ->withCount('reviews')                 // reviews_count
-            ->withAvg('reviews', 'rating');        // reviews_avg_rating
+            ->withCount('reviews')
+            ->withAvg('reviews', 'rating');
 
-        // kalau yang login seller → tampilkan hanya produknya
         if ($request->user() && $request->user()->role === 'seller') {
             $query->where('seller_id', $request->user()->user_id);
         }
 
-        // ambil data + mapping rating agar rapi
         $products = $query->orderByDesc('product_id')->get()
             ->map(function ($p) {
                 $p->rating = round($p->reviews_avg_rating ?? 0, 1);
@@ -43,7 +40,6 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
-        // ... Validasi (Biarkan sama) ...
         $data = $request->validate([
             'product_name' => ['required','string','max:100'],
             'price'        => ['required','numeric','min:0'],
@@ -63,33 +59,26 @@ class ProductController extends Controller
 
         if ($request->hasFile('image')) {
             try {
-                // [SOLUSI ANTI-ERROR]
-                // Kita panggil manual library aslinya, tanpa lewat config Laravel yang bermasalah.
-                // ⚠️ PERHATIAN: Cek Dashboard Cloudinary Anda -> Bagian kiri atas.
-                // Apakah 'Cloud Name' Anda benar-benar string panjang '2440...' itu?
-                // Atau nama lain (misal: 'dxyz123')? GANTI di bawah ini:
-                
+
                 $cloudinary = new \Cloudinary\Cloudinary([
                     'cloud' => [
-                        'cloud_name' => 'dx1mtttj0', // <-- CEK INI LAGI DI DASHBOARD!
+                        'cloud_name' => 'dx1mtttj0',
                         'api_key'    => '498197175883194',
                         'api_secret' => 'EEfdW5UqfkSaaHQ7Mcbw5k3QjOE',
                     ],
                     'url' => [
-                        'secure' => true 
+                        'secure' => true
                     ]
                 ]);
 
                 $uploadedFile = $request->file('image');
-                
-                // Upload menggunakan instance manual
+
                 $result = $cloudinary->uploadApi()->upload($uploadedFile->getRealPath(), [
                     'folder' => 'products'
                 ]);
-                
-                // Ambil URL aman
+
                 $product->image = $result['secure_url'];
-                
+
                 \Illuminate\Support\Facades\Log::info('✅ Upload Manual Berhasil: ' . $result['secure_url']);
 
             } catch (\Exception $e) {
@@ -106,14 +95,14 @@ class ProductController extends Controller
     public function bestSelling()
     {
             $products = Product::where('sold', '>', 0)
-            ->withAvg('reviews', 'rating') 
+            ->withAvg('reviews', 'rating')
             ->withCount('reviews')
             ->orderBy('sold', 'desc')
             ->take(4)
             ->get();
 
         $products->transform(function ($product) {
-            $product->rating = round($product->reviews_avg_rating ?? 0, 1); // Bulatkan 1 desimal
+            $product->rating = round($product->reviews_avg_rating ?? 0, 1);
             $product->rating_count = $product->reviews_count ?? 0;
             return $product;
         });
@@ -121,7 +110,6 @@ class ProductController extends Controller
         return response()->json(['data' => $products]);
     }
 
-    // PUT/PATCH /api/products/{product}
     public function update(Request $request, Product $product)
     {
         $data = $request->validate([
@@ -145,11 +133,9 @@ class ProductController extends Controller
         // --- LOGIKA UPLOAD UPDATE (MANUAL) ---
         if ($request->hasFile('image')) {
             try {
-                // 1. Inisialisasi Cloudinary Manual (Sama seperti store)
-                // PENTING: Pastikan 'cloud_name' sesuai dengan yang berhasil di method store!
                 $cloudinary = new \Cloudinary\Cloudinary([
                     'cloud' => [
-                        'cloud_name' => 'dx1mtttj0', // <--- GANTI SESUAI YANG BERHASIL TADI
+                        'cloud_name' => 'dx1mtttj0',
                         'api_key'    => '498197175883194',
                         'api_secret' => 'EEfdW5UqfkSaaHQ7Mcbw5k3QjOE',
                     ],
@@ -158,25 +144,21 @@ class ProductController extends Controller
                     ]
                 ]);
 
-                // 2. Hapus Gambar Lama di Cloudinary (Opsional & Best Practice)
-                // Kita coba ekstrak Public ID dari URL lama
                 if ($product->image && str_contains($product->image, 'cloudinary')) {
                     try {
-                        // URL Contoh: .../upload/v1234/products/abcde.jpg
-                        // Kita butuh: products/abcde
+
                         $path = parse_url($product->image, PHP_URL_PATH);
-                        $filename = pathinfo($path, PATHINFO_FILENAME); 
-                        $publicId = 'products/' . $filename; // Asumsi folder 'products'
-                        
+                        $filename = pathinfo($path, PATHINFO_FILENAME);
+                        $publicId = 'products/' . $filename;
+
                         $cloudinary->uploadApi()->destroy($publicId);
                         \Illuminate\Support\Facades\Log::info('🗑️ Hapus gambar lama: ' . $publicId);
                     } catch (\Exception $e) {
-                        // Abaikan error hapus, jangan batalkan update cuma gara-gara gagal hapus file lama
+
                         \Illuminate\Support\Facades\Log::warning('⚠️ Gagal hapus gambar lama: ' . $e->getMessage());
                     }
                 }
 
-                // 3. Upload Gambar Baru
                 $uploadedFile = $request->file('image');
                 $result = $cloudinary->uploadApi()->upload($uploadedFile->getRealPath(), [
                     'folder' => 'products'
@@ -196,7 +178,6 @@ class ProductController extends Controller
         return response()->json($product->load('category','seller'));
     }
 
-    // DELETE /api/products/{product}
     public function destroy(Product $product)
     {
         if ($product->image) {
@@ -209,13 +190,11 @@ class ProductController extends Controller
 
         public function reviews(Product $product)
     {
-        // ambil semua review untuk produk ini
         $reviews = Review::where('product_id', $product->product_id)
-            ->with('buyer')   // biar bisa tampilkan nama buyer
+            ->with('buyer')
             ->latest()
             ->get();
 
-        // summary meta
         $meta = [
             'count'      => $reviews->count(),
             'avg_rating' => round($reviews->avg('rating') ?? 0, 1),

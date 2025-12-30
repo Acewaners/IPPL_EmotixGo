@@ -14,7 +14,7 @@ class Review extends Model
         'product_id',
         'buyer_id',
         'review_text',
-        'rating',      // ⬅️ tambahin ini
+        'rating',      
         'sentiment',
     ];
 

@@ -6,7 +6,7 @@ import { useCartStore } from '../stores/cart'
 import {
   HeartIcon,
   EyeIcon,
-  ShoppingBagIcon, // Saya ganti ShoppingCart jadi Bag biar lebih modern
+  ShoppingBagIcon, 
 } from '@heroicons/vue/24/outline'
 import { HeartIcon as HeartSolid, StarIcon as StarSolid } from '@heroicons/vue/24/solid'
 

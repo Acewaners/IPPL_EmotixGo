@@ -62,7 +62,7 @@ const goToSellerOrders = () => {
 const goToAccountPage = () => {
   if (!auth.token) return r.push('/login')
   r.push('/account'); closeAccountMenu()
-  closeMobileMenu() // TAMBAHKAN BARIS INI
+  closeMobileMenu() 
 }
 const handleLogout = async () => {
   try { await auth.logout(); r.push('/login') } 
@@ -73,15 +73,13 @@ const handleLogout = async () => {
 const goToBuyerReviews = () => {
   if (!auth.token) return r.push('/login')
   r.push('/my-reviews')
-  closeAccountMenu() // Untuk desktop
-  closeMobileMenu()  // TAMBAHKAN INI agar menu HP tertutup otomatis
+  closeAccountMenu() 
+  closeMobileMenu()  
 }
 
 onMounted(() => {
   if (auth.token) {
-    // Sekarang ini aman karena 'wishlist' sudah didefinisikan di atas
     wishlist.fetchWishlist()
-    // cart.fetchCart() 
   }
 })
 

@@ -29,8 +29,8 @@ import { RouterLink } from 'vue-router'
         <div class="space-y-3 mb-8">
           <h1 class="text-3xl font-black tracking-tight text-gray-900">Payment Successful!</h1>
           <p class="text-gray-500 leading-relaxed">
-            Terima kasih telah berbelanja di Emotix. <br class="hidden sm:block" />
-            Pesanan Anda telah kami terima dan sedang diproses.
+            Thank you for shopping at Emotix. <br class="hidden sm:block" />
+            Your order has been received and is being processed.
           </p>
         </div>
 
@@ -42,8 +42,8 @@ import { RouterLink } from 'vue-router'
                </svg>
             </div>
             <div>
-               <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Status Pengiriman</p>
-               <p class="text-sm text-gray-700">Pantau pesanan Anda di menu <span class="font-bold text-black">Pesanan Saya</span>.</p>
+               <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Delivery Status</p>
+               <p class="text-sm text-gray-700">Monitor your order in the menu <span class="font-bold text-black">My Orders</span>.</p>
             </div>
           </div>
         </div>
@@ -53,7 +53,7 @@ import { RouterLink } from 'vue-router'
             to="/buyer/orders" 
             class="group flex items-center justify-center gap-2 w-full bg-black text-white font-bold text-sm py-4 rounded-full transition-all hover:bg-gray-800 shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:scale-95"
           >
-            Lihat Pesanan Saya
+            See My Orders
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 transition-transform group-hover:translate-x-1">
               <path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clip-rule="evenodd" />
             </svg>
@@ -63,7 +63,7 @@ import { RouterLink } from 'vue-router'
             to="/" 
             class="block w-full bg-white text-gray-700 border border-gray-200 font-bold text-sm py-4 rounded-full transition-all hover:bg-gray-50 hover:border-gray-300"
           >
-            Kembali Belanja
+            Back to Shopping
           </RouterLink>
         </div>
 

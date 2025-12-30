@@ -23,11 +23,9 @@ const router = createRouter({
   history: createWebHistory(),
 
   scrollBehavior(to, from, savedPosition) {
-    // Jika user menekan tombol Back/Forward browser, kembali ke posisi sebelumnya
     if (savedPosition) {
       return savedPosition
     }
-    // Jika pindah halaman biasa, paksa scroll ke paling atas (Top: 0)
     return { top: 0 }
   },
 
@@ -54,13 +52,13 @@ const router = createRouter({
       path: '/account',
       name: 'account',
       component: AccountView,
-      meta: { requiresAuth: true } // Pastikan hanya bisa diakses jika sudah login
+      meta: { requiresAuth: true } 
     },
     { 
       path: '/products', 
       name: 'all-products', 
       component: AllProductsView, 
-      meta: { auth: true } // Sesuaikan auth jika halaman ini publik atau butuh login
+      meta: { auth: true } 
     },
     { path: '/my-reviews',name:'buyer-reviews' ,component: myReviews, meta: { auth: true } },
     { path: '/seller/orders', component: SellerOrders, meta: { auth: true, role: 'seller' } },

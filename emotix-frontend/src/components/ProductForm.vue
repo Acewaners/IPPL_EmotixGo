@@ -12,7 +12,6 @@ import {
 const props = defineProps({
   modelValue: { type: Object, default: () => ({}) },
   categories: { type: Array, default: () => [] },
-  // ✅ 1. Tambahkan prop isLoading
   isLoading: { type: Boolean, default: false } 
 })
 
@@ -46,7 +45,7 @@ const submit = () => emit('submit', { ...local })
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="space-y-2">
           <label class="text-[11px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-            <TagIcon class="w-3.5 h-3.5" /> Kategori <span class="text-red-500">*</span>
+            <TagIcon class="w-3.5 h-3.5" /> Category <span class="text-red-500">*</span>
           </label>
           <div class="relative group">
             <select
@@ -54,7 +53,7 @@ const submit = () => emit('submit', { ...local })
               class="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-3.5 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-black focus:bg-white transition-all pr-10 truncate"
               required
             >
-              <option disabled value="">Pilih kategori</option>
+              <option disabled value="">Select Category</option>
               <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
             </select>
             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 group-focus-within:text-black">
@@ -67,13 +66,13 @@ const submit = () => emit('submit', { ...local })
 
         <div class="space-y-2">
           <label class="text-[11px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-            <DocumentTextIcon class="w-3.5 h-3.5" /> Nama Produk <span class="text-red-500">*</span>
+            <DocumentTextIcon class="w-3.5 h-3.5" /> Product Name <span class="text-red-500">*</span>
           </label>
           <input
             v-model="local.product_name"
             type="text"
             class="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-3.5 text-sm outline-none focus:ring-2 focus:ring-black focus:bg-white transition-all placeholder-gray-400"
-            placeholder="Masukkan nama produk"
+            placeholder="Enter product name"
             required
           />
         </div>
@@ -82,7 +81,7 @@ const submit = () => emit('submit', { ...local })
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div class="space-y-2">
           <label class="text-[11px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-            <CurrencyDollarIcon class="w-3.5 h-3.5" /> Harga (Rp) <span class="text-red-500">*</span>
+            <CurrencyDollarIcon class="w-3.5 h-3.5" /> Price (Rp) <span class="text-red-500">*</span>
           </label>
           <div class="relative group">
             <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-400 group-focus-within:text-black font-bold text-xs">Rp</span>
@@ -99,7 +98,7 @@ const submit = () => emit('submit', { ...local })
 
         <div class="space-y-2">
           <label class="text-[11px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-            <CircleStackIcon class="w-3.5 h-3.5" /> Stok <span class="text-red-500">*</span>
+            <CircleStackIcon class="w-3.5 h-3.5" /> Stock <span class="text-red-500">*</span>
           </label>
           <input
             v-model.number="local.stock"
@@ -112,11 +111,11 @@ const submit = () => emit('submit', { ...local })
         </div>
 
         <div class="space-y-2">
-          <label class="text-[11px] font-black text-gray-400 uppercase tracking-widest">Gambar Produk</label>
+          <label class="text-[11px] font-black text-gray-400 uppercase tracking-widest">Product Image</label>
           <label class="flex flex-col items-center justify-center w-full h-[50px] bg-gray-50/50 border border-gray-200 border-dashed rounded-xl cursor-pointer hover:bg-gray-100 hover:border-black transition-all group overflow-hidden">
             <div class="flex items-center gap-2 text-xs text-gray-500 px-3 w-full justify-center">
               <CloudArrowUpIcon class="w-4 h-4 flex-shrink-0 group-hover:text-black transition-colors" />
-              <span v-if="!local.image" class="truncate">Pilih gambar</span>
+              <span v-if="!local.image" class="truncate">Choose image</span>
               <span v-else class="truncate font-bold text-black uppercase tracking-tight">{{ local.image.name }}</span>
             </div>
             <input type="file" accept="image/*" @change="onFile" class="hidden" />
@@ -126,13 +125,13 @@ const submit = () => emit('submit', { ...local })
 
       <div class="space-y-2">
         <label class="text-[11px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-          <DocumentTextIcon class="w-3.5 h-3.5" /> Deskripsi
+          <DocumentTextIcon class="w-3.5 h-3.5" /> Description
         </label>
         <textarea
           v-model="local.description"
           rows="4"
           class="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-3.5 text-sm outline-none focus:ring-2 focus:ring-black focus:bg-white transition-all placeholder-gray-400 resize-none break-words"
-          placeholder="Tuliskan deskripsi lengkap produk..."
+          placeholder="Enter full product description..."
         ></textarea>
       </div>
     </div>
@@ -150,7 +149,7 @@ const submit = () => emit('submit', { ...local })
 
         <CheckIcon v-else class="w-4 h-4" />
         
-        <span>{{ isLoading ? 'Menyimpan...' : 'Simpan Produk' }}</span>
+        <span>{{ isLoading ? 'Saving...' : 'Save Product' }}</span>
       </button>
     </div>
   </div>

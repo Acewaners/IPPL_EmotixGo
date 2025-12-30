@@ -48,10 +48,9 @@ class AuthController extends Controller
     {
         $user = $req->user();
 
-        // --- KODE DEBUG UNTUK LARAVEL.LOG ---
         Log::info('Debug Update Profile:', [
-            'user_obj_id_attribute' => $user->id,        // Cek apakah 'id' ada
-            'user_obj_real_primary' => $user->user_id,   // Cek primary key asli Anda
+            'user_obj_id_attribute' => $user->id,
+            'user_obj_real_primary' => $user->user_id,
             'input_email'           => $req->email,
             'current_db_email'      => $user->email
         ]);
@@ -59,23 +58,22 @@ class AuthController extends Controller
         $data = $req->validate([
             'name' => ['required', 'string', 'max:100'],
             'email' => [
-                'required', 
-                'email', 
-                'max:100', 
-                // PERBAIKAN: Gunakan $user->user_id karena itu primary key Anda
-                Rule::unique('users', 'email')->ignore($user->user_id, 'user_id'), 
+                'required',
+                'email',
+                'max:100',
+                Rule::unique('users', 'email')->ignore($user->user_id, 'user_id'),
             ],
         ]);
 
         try {
             $user->update($data);
             Log::info('Update Profile Success for ID: ' . $user->user_id);
-            
+
             return response()->json([
                 'message' => 'Profile updated successfully',
                 'user' => $user
             ], 200);
-            
+
         } catch (\Exception $e) {
             Log::error('Update Profile Error: ' . $e->getMessage());
             return response()->json(['message' => 'Update failed'], 500);
@@ -83,8 +81,8 @@ class AuthController extends Controller
     }
 
     public function updatePassword(Request $request) {
-        // Pastikan user diambil dari Auth::user() atau $request->user()
-        $user = auth('sanctum')->user(); 
+
+        $user = auth('sanctum')->user();
 
         if (!$user) {
             Log::error('Update Password Failed: User not found in session.');
@@ -96,7 +94,6 @@ class AuthController extends Controller
             'new_password' => 'required|min:8|confirmed',
         ]);
 
-        // Lakukan pengecekan manual agar debug lebih jelas
         if (!Hash::check($request->current_password, $user->password)) {
             Log::error('Password Mismatch for User:', ['id' => $user->id, 'email' => $user->email]);
             return response()->json([
@@ -106,7 +103,7 @@ class AuthController extends Controller
         }
 
         $user->update(['password' => Hash::make($request->new_password)]);
-        
+
         Log::info('Password Update Success for User ID: ' . $user->id);
         return response()->json(['message' => 'Password changed successfully']);
     }

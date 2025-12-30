@@ -9,13 +9,11 @@ import { api } from '../lib/api'
 const cart = useCartStore()
 const r = useRouter()
 
-// data cart
 const items = computed(() => cart.cartItems)
 const subtotal = computed(() => cart.cartSubtotal)
 const shipping = computed(() => 0)
 const total = computed(() => subtotal.value + shipping.value)
 
-// base URL storage (sama kayak di halaman lain)
 const STORAGE_BASE =
   import.meta.env?.VITE_STORAGE_BASE ?? 'http://localhost:8000/storage'
 
@@ -33,7 +31,6 @@ const productImage = (p) => {
 const formatPrice = (price) =>
   `Rp. ${Number(price || 0).toLocaleString('id-ID')}`
 
-// form billing
 const billing = reactive({
   firstName: '',
   company: '',
@@ -51,34 +48,30 @@ const placing = ref(false)
 
 const applyCoupon = () => {
   if (!billing.coupon) return
-  alert('Coupon ini masih dummy, belum diimplementasi 😊')
+  alert('This coupon is still dummy, not implemented yet 😊')
 }
 
-// --- INI YANG PENTING: kirim transaksi ke backend ---
 const placeOrder = async () => {
   if (!items.value.length) {
-    return alert('Cart masih kosong, nggak ada yang bisa di-checkout.')
+    return alert('Cart is still empty, please add some products first.')
   }
 
-  // validasi simpel billing (biar nggak kosong banget)
   if (
     !billing.firstName ||
     !billing.address ||
     !billing.city ||
     !billing.phone
   ) {
-    return alert('Lengkapi dulu data Billing Details ya.')
+    return alert('Please fill in all required billing details.')
   }
 
-  // ambil seller_id dari product pertama (asumsi 1 cart = 1 seller)
   const firstItem = items.value[0]
   const sellerId = firstItem?.product?.seller_id
 
   if (!sellerId) {
-    return alert('seller_id tidak ditemukan di product, cek data produk dulu.')
+    return alert('Unable to determine seller for the products in the cart.')
   }
 
-  // bentuk payload sesuai validate() di backend
   const payload = {
     seller_id: sellerId,
     items: items.value.map((i) => ({
@@ -92,12 +85,10 @@ const placeOrder = async () => {
   try {
     const res = await api.post('/transactions', payload)
 
-    // bersihkan cart setelah transaksi dibuat
     cart.clearCart()
 
-    // redirect ke halaman payment, kirim data transaksi (opsional lewat state)
     r.push({
-      name: 'payment', // pastikan di router ada route ini
+      name: 'payment', 
       params: { id: res.data.transaction_id },
       state: { trx: res.data },
     })
@@ -110,11 +101,11 @@ const placeOrder = async () => {
         const msg = Object.values(errors).flat().join('\n')
         alert(msg)
       } else {
-        alert(resp.data?.message || 'Data tidak valid.')
+        alert(resp.data?.message || 'Invalid data provided.')
       }
     } else {
       console.error(e)
-      alert('Checkout gagal, coba lagi sebentar lagi ya.')
+      alert('Checkout failed, please try again later.')
     }
   } finally {
     placing.value = false
@@ -144,12 +135,12 @@ const placeOrder = async () => {
           <form id="checkout-form" class="space-y-6" @submit.prevent="placeOrder">
             
             <div class="space-y-2">
-              <label class="text-sm font-semibold text-gray-700">First Name <span class="text-red-500">*</span></label>
+              <label class="text-sm font-semibold text-gray-700">Full Name <span class="text-red-500">*</span></label>
               <input
                 v-model="billing.firstName"
                 type="text"
                 class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
-                placeholder="Enter your first name"
+                placeholder="Enter your full name"
               />
             </div>
 
@@ -199,7 +190,7 @@ const placeOrder = async () => {
                 v-model="billing.phone"
                 type="tel"
                 class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
-                placeholder="0812..."
+                placeholder="+628..."
               />
             </div>
 

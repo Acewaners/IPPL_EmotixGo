@@ -33,12 +33,12 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::put('/user/update-profile', [AuthController::class, 'updateProfile']);
     Route::put('/user/update-password', [AuthController::class, 'updatePassword']);
     Route::post('/products',[ProductController::class,'store']);
-    Route::put('/products/{product}',[ProductController::class,'update']);     // ✅ ganti PUT
-    Route::patch('/products/{product}',[ProductController::class,'update']);   // ✅ optional
-    Route::delete('/products/{product}',[ProductController::class,'destroy']); // ✅ DELETE
+    Route::put('/products/{product}',[ProductController::class,'update']);
+    Route::patch('/products/{product}',[ProductController::class,'update']);
+    Route::delete('/products/{product}',[ProductController::class,'destroy']); 
     Route::get('/products/{product}/reviews', [ProductController::class, 'reviews']);
     Route::post('/contact', [ContactController::class, 'store']);
-    
+
     Route::put('/seller/orders/{id}/status', [TransactionController::class, 'updateStatus']);
     Route::post('/transactions',[TransactionController::class,'create']);
     Route::get('/buyer/orders',[TransactionController::class,'indexBuyer']);

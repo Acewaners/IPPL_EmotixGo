@@ -25,10 +25,10 @@ onMounted(async () => {
   if (!auth.user) {
     try {
       const { data } = await api.get('/me')
-      auth.user = data // Pastikan store auth terisi data user lengkap
+      auth.user = data 
       profileForm.value = { name: data.name, email: data.email }
     } catch (e) {
-      console.error('Gagal mengambil data user', e)
+      console.error('Failed to fetch user data', e)
     }
   }
 })
@@ -39,9 +39,9 @@ const updateProfile = async () => {
   try {
     const { data } = await api.put('/user/update-profile', profileForm.value)
     auth.user = data.user 
-    message.value = "Profil berhasil diperbarui!"
+    message.value = "Profile successfully updated!"
   } catch (e) { 
-    alert(e.response?.data?.message || 'Gagal update profil') 
+    alert(e.response?.data?.message || 'Failed to update profile') 
   } finally { 
     loading.value = false 
   }
@@ -52,10 +52,10 @@ const updatePassword = async () => {
   message.value = ''
   try {
     await api.put('/user/update-password', passwordForm.value)
-    message.value = "Password berhasil diubah!"
+    message.value = "Password successfully changed!"
     passwordForm.value = { current_password: '', new_password: '', new_password_confirmation: '' }
   } catch (e) { 
-    alert(e.response?.data?.message || 'Gagal ubah password') 
+    alert(e.response?.data?.message || 'Failed to change password') 
   } finally { 
     loading.value = false 
   }
@@ -69,7 +69,7 @@ const updatePassword = async () => {
     <main class="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div class="mb-10">
         <h1 class="text-4xl font-black tracking-tight text-gray-900">Settings</h1>
-        <p class="text-gray-500 mt-2 text-lg">Kelola informasi profil dan keamanan akun Emotix Anda.</p>
+        <p class="text-gray-500 mt-2 text-lg">Manage your profile information and account security.</p>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">

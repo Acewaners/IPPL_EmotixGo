@@ -6,19 +6,17 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void {
         Schema::create('reviews', function (Blueprint $table) {
-            // Sesuai protected $primaryKey = 'review_id'
+
             $table->id('review_id');
-            
-            // Relasi ke products.product_id
+
             $table->foreignId('product_id')->constrained('products', 'product_id')->onDelete('cascade');
-            
-            // Relasi ke users.user_id (Buyer)
+
             $table->foreignId('buyer_id')->constrained('users', 'user_id')->onDelete('cascade');
-            
+
             $table->text('review_text')->nullable();
-            $table->integer('rating')->nullable(); // Set nullable langsung biar aman
+            $table->integer('rating')->nullable(); 
             $table->string('sentiment')->nullable();
-            
+
             $table->timestamps();
         });
     }

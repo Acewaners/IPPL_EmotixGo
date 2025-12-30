@@ -12,8 +12,8 @@ const router = useRouter()
 const order = ref(null)
 const loading = ref(true)
 const error = ref('')
-const status = ref('waiting')       // waiting | success | failed
-const remaining = ref(3600)           // 10 detik
+const status = ref('waiting')       
+const remaining = ref(3600)           
 const updating = ref(false)
 let timerId = null
 
@@ -50,7 +50,6 @@ const loadOrder = async () => {
   try {
     const id = route.params.id
     const res = await api.get(`/transactions/${id}`)
-    // tergantung response backend: {data: {...}} atau {...}
     order.value = res.data?.data ?? res.data
   } catch (e) {
     console.error(e)
@@ -74,9 +73,6 @@ const updateStatusToCompleted = async () => {
       status: 'processing',
       tracking_number: null,
     })
-    // status.value = 'success'
-    // kalau mau, redirect ke halaman success:
-    // router.push({ name: 'payment-success', params: { id } })
     router.push({ name: 'payment-success' })
   } catch (e) {
     console.error(e)
@@ -89,12 +85,10 @@ const updateStatusToCompleted = async () => {
   }
 }
 
-// dipakai kalau user klik tombol "Simulate Payment (Demo)"
 const simulatePayment = async () => {
   await updateStatusToCompleted()
 }
 
-// TIMER 10 DETIK AUTO BAYAR
 const startCountdown = () => {
   timerId = setInterval(async () => {
     if (remaining.value > 0) {
@@ -251,7 +245,7 @@ onBeforeUnmount(() => {
             @click="simulatePayment"
             class="w-full max-w-sm bg-black text-white px-6 py-3 rounded-full text-sm font-bold shadow-lg hover:bg-gray-800 hover:shadow-xl hover:-translate-y-0.5 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
-            {{ updating ? 'Processing...' : 'Simulate Payment (Demo)' }}
+            {{ updating ? 'Processing...' : 'Simulate Payment' }}
           </button>
           
           <p class="text-xs text-gray-400 text-center">

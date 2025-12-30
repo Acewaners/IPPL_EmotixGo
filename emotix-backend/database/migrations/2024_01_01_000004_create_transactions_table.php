@@ -8,19 +8,17 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Pastikan disini tertulis 'transactions', BUKAN 'products'
         Schema::create('transactions', function (Blueprint $table) {
-            $table->id('transaction_id'); // Primary Key
-            
-            // Relasi ke users (buyer & seller)
+            $table->id('transaction_id');
+
             $table->foreignId('buyer_id')->constrained('users', 'user_id')->onDelete('cascade');
             $table->foreignId('seller_id')->constrained('users', 'user_id')->onDelete('cascade');
-            
+
             $table->dateTime('transaction_date')->nullable();
             $table->decimal('total_price', 12, 2);
             $table->string('status')->default('pending');
             $table->string('tracking_number')->nullable();
-            
+
             $table->timestamps();
         });
     }

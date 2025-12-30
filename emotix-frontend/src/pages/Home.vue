@@ -43,21 +43,16 @@ const bestSellingProducts = ref([])
 const openDetail = (product) => {
   if (!product?.product_id) return
   r.push(`/products/${product.product_id}`)
-  // atau kalau pakai route name:
-  // r.push({ name: 'product-detail', params: { id: product.product_id } })
 }
 
-// Ambil data dari backend TANPA paksa login
 onMounted(async () => {
   loading.value = true
   try {
-    // A. Ambil Best Selling (Endpoint Baru)
     const resBest = await api.get('/products/best-selling')
     bestSellingProducts.value = resBest.data?.data || []
 
-    // B. Ambil Semua Produk (Endpoint Lama)
     const resAll = await api.get('/products')
-    products.value = resAll.data?.data || [] // Masuk ke variabel 'products'
+    products.value = resAll.data?.data || []
     
   } catch (e) {
     console.error("Gagal load data", e)
@@ -78,12 +73,10 @@ const exploreProducts = computed(() => {
 
 const exploreContainer = ref(null)
 
-// 2. Fungsi untuk handle klik tombol
 const scrollExplore = (direction) => {
   const container = exploreContainer.value
   if (!container) return
 
-  // Tentukan jarak scroll (misal: lebar container dibagi 2, atau angka tetap misal 300px)
   const scrollAmount = container.clientWidth / 2
 
   if (direction === 'left') {
@@ -99,11 +92,11 @@ const nextSlide = () => {
 
 const setSlide = (index) => {
   currentSlide.value = index
-  resetTimer() // Reset timer kalau user klik manual
+  resetTimer() 
 }
 
 const startTimer = () => {
-  sliderInterval.value = setInterval(nextSlide, 5000) // Geser tiap 5 detik
+  sliderInterval.value = setInterval(nextSlide, 5000) 
 }
 
 const resetTimer = () => {
@@ -111,15 +104,10 @@ const resetTimer = () => {
   startTimer()
 }
 
-// ... kode onMounted fetch produk yang sudah ada ...
-
-// Tambahkan startTimer di onMounted
 onMounted(async () => {
   startTimer()
-  // ... fetch data produk ...
 })
 
-// Matikan timer saat pindah halaman
 onUnmounted(() => {
   clearInterval(sliderInterval.value)
 })
@@ -132,7 +120,6 @@ onUnmounted(() => {
     <Navbar />
 
     <main class="flex-1">
-      <!-- HERO SECTION -->
       <section class="w-full bg-black relative overflow-hidden group">
         
         <div 
@@ -221,8 +208,8 @@ onUnmounted(() => {
         </div>
 
         <div v-else-if="bestSellingProducts.length === 0" class="py-12 text-center text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-           <p class="text-lg font-medium">Belum ada produk terlaris bulan ini.</p>
-           <p class="text-sm">Jadilah pembeli pertama!</p>
+           <p class="text-lg font-medium">There are no best-selling products this month.</p>
+           <p class="text-sm">Be the first buyer!</p>
         </div>
 
         <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-4">

@@ -8,7 +8,6 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // CEK DULU: Hanya jalankan jika kolom 'sold' BELUM ada
         if (!Schema::hasColumn('products', 'sold')) {
             Schema::table('products', function (Blueprint $table) {
                 $table->unsignedInteger('sold')->default(0)->after('stock');

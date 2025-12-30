@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { useAuth } from '../stores/auth'
-import { api } from '../lib/api' // Pastikan import api ada
+import { api } from '../lib/api' 
 import Navbar from '../components/Navbar.vue'
 import Footer from '../components/Footer.vue'
 
@@ -17,7 +17,7 @@ const error = ref('')
 const success = ref('')
 
 // --- STATE RESET PASSWORD ---
-const isResetMode = ref(false) // Toggle antara Login vs Reset
+const isResetMode = ref(false) 
 const resetForm = ref({
   email: '',
   old_password: '',
@@ -31,10 +31,10 @@ const submitLogin = async () => {
   loading.value = true
   try {
     await auth.login(email.value, password.value)
-    success.value = 'Login berhasil! Mengalihkan...'
+    success.value = 'Login successful! Redirecting...'
     setTimeout(() => { r.push('/') }, 1000)
   } catch (e) {
-    error.value = e?.response?.data?.message || 'Email atau password salah.'
+    error.value = e?.response?.data?.message || 'Incorrect email or password.'
   } finally {
     loading.value = false
   }
@@ -44,33 +44,29 @@ const submitLogin = async () => {
 const submitReset = async () => {
   error.value = ''
   success.value = ''
-  
-  // Validasi sederhana
+
   if (!resetForm.value.email || !resetForm.value.old_password || !resetForm.value.new_password) {
-    error.value = 'Mohon lengkapi semua kolom.'
+    error.value = 'Please complete all fields.'
     return
   }
 
   loading.value = true
   try {
-    // Sesuaikan endpoint ini dengan backend Anda
-    // Contoh: POST /auth/reset-password
     await api.post('/auth/reset-password', {
       email: resetForm.value.email,
       old_password: resetForm.value.old_password,
       new_password: resetForm.value.new_password
     })
 
-    success.value = 'Password berhasil diubah! Silakan login.'
+    success.value = 'Password successfully changed! Please login.'
     
-    // Kembalikan ke mode login setelah sukses
     setTimeout(() => {
       toggleMode()
-      success.value = '' // Clear success msg di login form
+      success.value = '' 
     }, 2000)
 
   } catch (e) {
-    error.value = e?.response?.data?.message || 'Gagal mengubah password. Cek kembali data Anda.'
+    error.value = e?.response?.data?.message || 'Failed to change password. Please check your data.'
   } finally {
     loading.value = false
   }
@@ -81,7 +77,6 @@ const toggleMode = () => {
   isResetMode.value = !isResetMode.value
   error.value = ''
   success.value = ''
-  // Auto-fill email di form reset jika user sudah ketik di login
   if (isResetMode.value) {
     resetForm.value.email = email.value
   }

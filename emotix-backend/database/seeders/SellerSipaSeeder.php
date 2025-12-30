@@ -14,7 +14,7 @@ class SellerSipaSeeder extends Seeder
             ['email' => 'dhio@example.com'],
             [
                 'name'     => 'dhio',
-                'password' => Hash::make('dhio123'), // ganti sesuai mau
+                'password' => Hash::make('dhio123'), 
                 'role'     => 'seller',
             ]
         );

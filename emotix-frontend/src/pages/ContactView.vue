@@ -3,9 +3,8 @@ import { ref } from 'vue'
 import { PhoneIcon, EnvelopeIcon, MapPinIcon, PaperAirplaneIcon } from '@heroicons/vue/24/solid'
 import Navbar from '../components/Navbar.vue'
 import Footer from '../components/Footer.vue'
-import { api } from '../lib/api' // Pastikan import api helper Anda benar
+import { api } from '../lib/api' 
 
-// State Form
 const form = ref({
   name: '',
   email: '',
@@ -18,7 +17,6 @@ const successMessage = ref('')
 const errorMessage = ref('')
 const errors = ref({})
 
-// Function Submit
 const submitContact = async () => {
   loading.value = true
   successMessage.value = ''
@@ -26,13 +24,10 @@ const submitContact = async () => {
   errors.value = {}
 
   try {
-    // Kirim ke backend endpoint '/contact'
     const response = await api.post('/contact', form.value)
     
-    // Jika sukses
     successMessage.value = 'Terima kasih! Pesan Anda telah kami terima.'
     
-    // Reset form
     form.value = {
       name: '',
       email: '',
@@ -41,7 +36,6 @@ const submitContact = async () => {
     }
   } catch (e) {
     if (e.response && e.response.status === 422) {
-      // Error validasi dari Laravel
       errors.value = e.response.data.errors
     } else {
       errorMessage.value = 'Maaf, terjadi kesalahan saat mengirim pesan. Silakan coba lagi.'
@@ -60,7 +54,7 @@ const submitContact = async () => {
       <div class="max-w-7xl mx-auto px-4 text-center">
         <h1 class="text-4xl md:text-5xl font-black tracking-tight mb-4">Get in Touch</h1>
         <p class="text-gray-500 max-w-2xl mx-auto text-lg">
-          Punya pertanyaan seputar produk atau pesanan? Tim kami siap membantu Anda 24/7. Jangan ragu untuk menghubungi kami.
+          Have questions about products or orders? Our team is ready to assist you 24/7. Don't hesitate to contact us.
         </p>
       </div>
     </div>
@@ -76,7 +70,7 @@ const submitContact = async () => {
            <div class="relative z-10">
               <h3 class="text-2xl font-bold mb-8">Contact Information</h3>
               <p class="text-gray-400 mb-12 leading-relaxed">
-                Isi formulir di samping dan tim kami akan merespons dalam waktu maksimal 24 jam. Atau hubungi kami langsung melalui kontak di bawah.
+                Fill out the form on the right and our team will respond within 24 hours. Or contact us directly through the contact information below.
               </p>
 
               <div class="space-y-8">
@@ -86,7 +80,7 @@ const submitContact = async () => {
                    </div>
                    <div>
                       <p class="font-bold text-lg">+62 852 4666 4332</p>
-                      <p class="text-gray-400 text-sm">Mon-Sun 9am-6pm</p>
+                      <p class="text-gray-400 text-sm">Mon-Sun 8am-6pm</p>
                    </div>
                 </div>
 
@@ -153,7 +147,7 @@ const submitContact = async () => {
                     <input 
                       v-model="form.phone"
                       type="tel" 
-                      placeholder="+62..."
+                      placeholder="+628..."
                       class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
                       :class="{'border-red-500 bg-red-50': errors.phone}"
                     />
@@ -166,7 +160,7 @@ const submitContact = async () => {
                  <input 
                    v-model="form.email"
                    type="email" 
-                   placeholder="example@email.com"
+                   placeholder="example@domain.com"
                    class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
                    :class="{'border-red-500 bg-red-50': errors.email}"
                  />

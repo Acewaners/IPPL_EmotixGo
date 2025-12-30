@@ -14,7 +14,7 @@ class Product extends Model
 
     public function getRouteKeyName()
     {
-        return 'product_id'; // ✅ penting untuk binding {product}
+        return 'product_id'; 
     }
 
     public function category(){
@@ -30,4 +30,4 @@ class Product extends Model
     return $this->hasMany(Review::class, 'product_id', 'product_id');
 }
 }
-    
+

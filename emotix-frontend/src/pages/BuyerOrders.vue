@@ -16,14 +16,12 @@ const error = ref('')
 const STORAGE_BASE = import.meta.env.VITE_STORAGE_BASE || 'http://localhost:8000/storage'
 
 const getProductImage = (product) => {
-  if (!product || !product.image) return '/dummy-qr.png' // Gambar default jika kosong
+  if (!product || !product.image) return '/dummy-qr.png' 
   
-  // Jika image sudah berupa URL lengkap (Cloudinary/http), langsung pakai
   if (product.image.startsWith('http')) {
     return product.image
   }
   
-  // Jika path lokal, tambahkan prefix storage
   return `${STORAGE_BASE}/${product.image}`
 }
 
@@ -35,7 +33,7 @@ onMounted(async () => {
     const { data } = await api.get('/buyer/orders')
     orders.value = data?.data ?? []
   } catch (e) {
-    error.value = e?.response?.data?.message || 'Gagal memuat pesanan'
+    error.value = e?.response?.data?.message || 'Failed to load orders.'
   } finally {
     loading.value = false
   }
@@ -68,8 +66,8 @@ const formatDate = (dateString) => {
           <span class="text-gray-300">/</span>
           <span class="font-semibold text-black">My Orders</span>
         </nav>
-        <h1 class="text-3xl font-black tracking-tight text-gray-900">Pesanan Saya</h1>
-        <p class="text-gray-500 mt-1">Riwayat lengkap belanjaan kamu di Emotix.</p>
+        <h1 class="text-3xl font-black tracking-tight text-gray-900">My Orders</h1>
+        <p class="text-gray-500 mt-1">Complete shopping history in Emotix.</p>
       </div>
 
       <div v-if="error" class="mb-6 p-4 rounded-xl bg-red-50 border border-red-100 flex items-center gap-3 text-red-700">
@@ -79,7 +77,7 @@ const formatDate = (dateString) => {
 
       <div v-if="loading" class="flex flex-col items-center justify-center py-20">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
-        <p class="mt-4 text-sm text-gray-500">Memuat riwayat pesanan...</p>
+        <p class="mt-4 text-sm text-gray-500">Loading order history...</p>
       </div>
 
       <div v-else>
@@ -161,15 +159,15 @@ const formatDate = (dateString) => {
               <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 5c.07.286.074.58.074.857 0 .888-.363 1.633-.99 2.127C19.33 17.22 18.239 17.5 17.001 17.5c-1.296 0-2.396-.328-3.085-1.077-.13-.141-.19-.315-.19-.505v-4.257c0-.65-.526-1.168-1.185-1.168-1.184.282-1.854.282-2.924 0-.663 0-1.196.526-1.196 1.175v4.25c0 .185-.058.356-.182.493C7.576 17.16 6.47 17.5 5.166 17.5c-1.229 0-2.311-.272-2.909-.99-.62-.486-.98-1.221-.98-2.092 0-.295.008-.61.085-.92l1.378-5.32c.18-.696.88-1.177 1.597-1.177h12.72c.71 0 1.408.473 1.584 1.178z" />
             </svg>
           </div>
-          <h3 class="text-lg font-bold text-gray-900 mb-1">Belum ada pesanan</h3>
+          <h3 class="text-lg font-bold text-gray-900 mb-1">No Orders Yet</h3>
           <p class="text-gray-500 text-sm mb-6 max-w-xs mx-auto">
-            Kamu belum pernah melakukan transaksi. Yuk mulai belanja produk favoritmu di Emotix.
+            You haven't made any transactions yet. Let's start shopping for your favorite products on Emotix.
           </p>
           <button
             @click="$router.push('/')"
             class="bg-black text-white px-8 py-3 rounded-full text-sm font-bold shadow-lg hover:bg-gray-800 hover:shadow-xl transition-all active:scale-95"
           >
-            Mulai Belanja
+            Start Shopping
           </button>
         </div>
 
