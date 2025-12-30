@@ -23,6 +23,7 @@ Route::get('/health', fn() => response()->json(['ok' => true]));
 
 Route::post('/register',[AuthController::class,'register']);
 Route::post('/login',[AuthController::class,'login']);
+Route::post('/contact', [ContactController::class, 'store']);
 
 Route::get('/products',[ProductController::class,'index']);
 Route::get('/products/best-selling', [ProductController::class, 'bestSelling']);
@@ -37,7 +38,7 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::patch('/products/{product}',[ProductController::class,'update']);
     Route::delete('/products/{product}',[ProductController::class,'destroy']); 
     Route::get('/products/{product}/reviews', [ProductController::class, 'reviews']);
-    Route::post('/contact', [ContactController::class, 'store']);
+    
 
     Route::put('/seller/orders/{id}/status', [TransactionController::class, 'updateStatus']);
     Route::post('/transactions',[TransactionController::class,'create']);

@@ -94,6 +94,12 @@ class TransactionController extends Controller
             }
             elseif ($requestedStatus === 'completed') {
                 $transaction->update(['status' => 'completed']);
+
+                if (in_array($transaction->status, ['cancelled', 'failed'])) {
+                    abort(403, 'Tidak bisa menyelesaikan pesanan yang sudah dibatalkan.');
+                }
+
+                $transaction->update(['status' => 'completed']);
             }
             else {
                 abort(403, 'Buyer can only pay (processing) or mark as completed.');

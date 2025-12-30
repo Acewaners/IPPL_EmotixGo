@@ -112,6 +112,11 @@ class ProductController extends Controller
 
     public function update(Request $request, Product $product)
     {
+
+        if ($product->seller_id !== $request->user()->user_id) {
+            abort(403, 'Unauthorized action.');
+        }
+
         $data = $request->validate([
             'product_name' => ['sometimes','required','string','max:100'],
             'price'        => ['sometimes','required','numeric','min:0'],
@@ -180,6 +185,11 @@ class ProductController extends Controller
 
     public function destroy(Product $product)
     {
+
+        if ($product->seller_id !== request()->user()->user_id) {
+            abort(403, 'Unauthorized action.');
+        }
+
         if ($product->image) {
             Storage::disk('public')->delete($product->image);
         }

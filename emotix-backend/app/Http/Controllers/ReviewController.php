@@ -151,7 +151,6 @@ class ReviewController extends Controller
                 ]
             );
         } else {
-            // Opsional: Jika user mengubah review jadi "hanya bintang", kita bisa hapus record sentimen lama
             // Sentiment::where('review_id', $review->review_id)->delete();
         }
 

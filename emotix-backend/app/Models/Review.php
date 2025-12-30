@@ -14,8 +14,9 @@ class Review extends Model
         'product_id',
         'buyer_id',
         'review_text',
-        'rating',      
+        'rating',
         'sentiment',
+        'analysis_status',
     ];
 
     protected $casts = [
