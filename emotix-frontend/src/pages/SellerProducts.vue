@@ -87,11 +87,21 @@ async function loadProducts() {
 async function loadSellerOrders() {
   try {
     const { data } = await api.get('/seller/orders')
-    sellerOrders.value = Array.isArray(data?.data)
+    
+    // 1. Ambil data mentah
+    const rawOrders = Array.isArray(data?.data)
       ? data.data
       : Array.isArray(data)
       ? data
       : []
+
+    // 2. FILTER: Hanya ambil order yang produknya masih ada (tidak null)
+    sellerOrders.value = rawOrders.filter(order => {
+        const hasValidProduct = order.details?.some(detail => detail.product != null);
+        
+        return hasValidProduct;
+    });
+
   } catch (e) {
     console.error('Gagal memuat pesanan seller:', e?.response?.data || e)
     sellerOrders.value = []
@@ -198,22 +208,29 @@ async function removeProduct(row) {
 /* ========== STATISTIK DASHBOARD ========== */
 
 const totalRevenue = computed(() =>
-  sellerOrders.value.reduce(
-    (sum, o) => sum + Number(o.total_price ?? 0),
-    0,
-  ),
+  sellerOrders.value.reduce((sum, o) => {
+    // Abaikan jika statusnya 'cancelled' atau 'pending_payment'
+    if (['cancelled', 'pending_payment'].includes(o.status)) return sum
+    
+    return sum + Number(o.total_price ?? 0)
+  }, 0)
 )
 
+// 2. Total Orders: Menghitung semua order masuk (termasuk yang batal tidak apa-apa untuk histori)
 const totalOrders = computed(() => sellerOrders.value.length)
 
+// 3. Total Products Sold: Hanya hitung item dari order yang VALID (sukses/proses)
 const totalProductsSold = computed(() =>
   sellerOrders.value.reduce((sum, o) => {
+    // Abaikan item dari order yang batal
+    if (['cancelled', 'pending_payment'].includes(o.status)) return sum
+
     const details = Array.isArray(o.details) ? o.details : []
     return (
       sum +
       details.reduce((s, d) => s + Number(d.quantity ?? 0), 0)
     )
-  }, 0),
+  }, 0)
 )
 
 const activeProducts = computed(

@@ -105,10 +105,18 @@ class ProductController extends Controller
 
     public function bestSelling()
     {
-        $products = Product::where('sold', '>', 0) // Filter: Hanya yang sudah pernah terjual
-            ->orderBy('sold', 'desc')              // Urutkan: Dari yang paling banyak terjual
-            ->take(4)                              // Limit: Ambil 4 saja (untuk tampilan Home)
+            $products = Product::where('sold', '>', 0)
+            ->withAvg('reviews', 'rating') 
+            ->withCount('reviews')
+            ->orderBy('sold', 'desc')
+            ->take(4)
             ->get();
+
+        $products->transform(function ($product) {
+            $product->rating = round($product->reviews_avg_rating ?? 0, 1); // Bulatkan 1 desimal
+            $product->rating_count = $product->reviews_count ?? 0;
+            return $product;
+        });
 
         return response()->json(['data' => $products]);
     }

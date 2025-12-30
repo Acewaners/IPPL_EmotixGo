@@ -55,7 +55,8 @@ const loadAll = async () => {
   try {
     const [trxRes, revRes] = await Promise.all([
       api.get('/buyer/transactions'),
-      api.get('/reviews/me'),
+      // ✅ Tambahkan timestamp
+      api.get(`/reviews/me?t=${new Date().getTime()}`), 
     ])
 
     const trxRaw = trxRes.data?.data ?? trxRes.data
@@ -65,8 +66,7 @@ const loadAll = async () => {
     myReviews.value = Array.isArray(revRaw?.data) ? revRaw.data : revRaw
   } catch (e) {
     console.error(e)
-    error.value =
-      e?.response?.data?.message || 'Gagal memuat data review.'
+    error.value = e?.response?.data?.message || 'Gagal memuat data review.'
   } finally {
     loading.value = false
   }
@@ -74,7 +74,8 @@ const loadAll = async () => {
 
 const reloadReviews = async () => {
   try {
-    const res = await api.get('/reviews/me')
+    // ✅ Tambahkan timestamp
+    const res = await api.get(`/reviews/me?t=${new Date().getTime()}`)
     const raw = res.data?.data ?? res.data
     myReviews.value = Array.isArray(raw?.data) ? raw.data : raw
   } catch (e) {
@@ -122,7 +123,6 @@ const submitReview = async (productId) => {
   const text = (drafts.value[productId] || '').trim()
   const rating = ratingDrafts.value[productId] || 0
 
-  // Validasi: Salah satu harus ada
   if (!text && !rating) {
     alert("Mohon isi bintang atau teks review.");
     return;
@@ -133,16 +133,28 @@ const submitReview = async (productId) => {
   error.value = ''
 
   try {
-    await api.post('/reviews', {
+    // 1. Tangkap response
+    const res = await api.post('/reviews', {
       product_id: productId,
       review_text: text || null,
       rating: rating || null,
     })
 
-    // Reset & Reload
+    // 2. Ambil data hasil AI
+    const newReviewData = res.data.data || res.data
+
+    // 3. Masukkan ke list lokal (agar pindah ke Riwayat scr real-time)
+    if (newReviewData) {
+        myReviews.value.unshift(newReviewData)
+    }
+
+    // Reset Form
     drafts.value[productId] = ''
     ratingDrafts.value[productId] = 0
-    await reloadReviews()
+    
+    // (Opsional) Sync background
+    setTimeout(() => reloadReviews(), 1000)
+
   } catch (e) {
     console.error(e)
     alert(e?.response?.data?.message || 'Gagal mengirim review.')
@@ -169,7 +181,6 @@ const saveEdit = async () => {
   const text = editDraft.value.trim()
   const rating = editRating.value || 0
   
-  // Validasi edit
   if (!text && !rating) {
       alert("Review tidak boleh kosong total.");
       return;
@@ -179,21 +190,45 @@ const saveEdit = async () => {
   error.value = ''
 
   try {
-    await api.put(`/reviews/${editId.value}`, {
+    // 1. Tangkap response
+    const res = await api.put(`/reviews/${editId.value}`, {
       review_text: text || null,
       rating: rating || null,
     })
     
+    // 2. Ambil Data Final dari AI
+    const aiResult = res.data.data || res.data 
+
+    // 3. Update Tampilan Secara Langsung (Tanpa Reload)
+    const targetIndex = myReviews.value.findIndex(r => r.review_id === editId.value)
+    
+    if (targetIndex !== -1 && aiResult) {
+       // Timpa data lama dengan data baru dari AI
+       myReviews.value[targetIndex] = aiResult
+    }
+
     // Reset state
     editId.value = null
     editDraft.value = ''
     editRating.value = 0
-    await reloadReviews()
+    
+    // (Opsional) Sync background
+    setTimeout(() => reloadReviews(), 1000)
+
   } catch (e) {
     console.error(e)
     alert(e?.response?.data?.message || 'Gagal menyimpan perubahan.')
   } finally {
     submitting.value = false
+  }
+}
+
+const getSentimentBadge = (sentiment) => {
+  switch (sentiment) {
+    case 'positive': return { label: 'Positif 😊', classes: 'bg-green-100 text-green-800' }
+    case 'negative': return { label: 'Negatif 😟', classes: 'bg-red-100 text-red-800' }
+    case 'neutral': return { label: 'Netral 😐', classes: 'bg-yellow-100 text-yellow-800' }
+    default: return null
   }
 }
 
@@ -356,6 +391,15 @@ onMounted(loadAll)
                   <div>
                     <h3 class="font-bold text-gray-900 text-sm truncate pr-4">{{ rev.product?.product_name || 'Produk Tidak Dikenal' }}</h3>
                     <p class="text-xs text-gray-400">{{ formatDateTime(rev.created_at) }}</p>
+
+                    <span 
+                      v-if="getSentimentBadge(rev.sentiment)" 
+                      class="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase"
+                      :class="getSentimentBadge(rev.sentiment).classes"
+                    >
+                      {{ getSentimentBadge(rev.sentiment).label }}
+                    </span>
+
                   </div>
                   <button
                     v-if="editId !== rev.review_id"
