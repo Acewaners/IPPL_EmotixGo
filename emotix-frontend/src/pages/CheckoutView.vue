@@ -65,8 +65,7 @@ const placeOrder = async () => {
     !billing.firstName ||
     !billing.address ||
     !billing.city ||
-    !billing.phone ||
-    !billing.email
+    !billing.phone
   ) {
     return alert('Lengkapi dulu data Billing Details ya.')
   }
