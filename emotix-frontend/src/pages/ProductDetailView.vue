@@ -5,7 +5,7 @@ import Navbar from '../components/Navbar.vue'
 import Footer from '../components/Footer.vue'
 import { api } from '../lib/api'
 import { useCartStore } from '../stores/cart'
-import { HeartIcon, StarIcon } from '@heroicons/vue/24/solid'
+import { HeartIcon, StarIcon, TrashIcon } from '@heroicons/vue/24/solid'
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/vue/24/solid'
 import { useAuth } from '../stores/auth'
 
@@ -92,7 +92,7 @@ const loadReviews = async (productId) => {
   reviewsLoading.value = true
   reviewsError.value = ''
   try {
-    const res = await api.get(`/products/${productId}/reviews`)
+    const res = await api.get(`/products/${productId}/reviews?t=${new Date().getTime()}`)
     const payload = res.data || {}
 
     reviews.value = payload.data || []
@@ -249,16 +249,29 @@ const submitReview = async () => {
 
   try {
     // 2. Kirim ke Backend (Kirim null jika kosong)
-    await api.post('/reviews', {
+    const res = await api.post('/reviews', {
       product_id: product.value.product_id,
       review_text: text || null, 
       rating: rating || null     
     })
 
+    console.log("DEBUG RES BACKEND:", res.data);
+
+    const newReviewData = res.data.data || res.data; 
+
+    if (newReviewData) {
+        reviews.value.unshift(newReviewData);
+        
+        if (reviewMeta.value) reviewMeta.value.count++;
+    }
     // Reset form
     newReview.value.text = ''
     newReview.value.rating = null
     
+    setTimeout(() => {
+        loadReviews(product.value.product_id)
+    }, 1000)
+
     // Reload list
     await loadReviews(product.value.product_id)
     
