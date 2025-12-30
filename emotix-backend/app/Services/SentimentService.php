@@ -20,7 +20,7 @@ class SentimentService
             return $aiResult;
         }
 
-        // 2. JIKA AI GAGAL, PAKAI BACKUP
+        
         Log::warning("⚠️ AI Down/Error, menggunakan Fallback Manual untuk: " . $text);
         return $this->localFallbackAnalysis($text);
     }
